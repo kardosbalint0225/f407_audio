@@ -1,0 +1,5 @@
+:module_generator:
+  :project_root: ./
+  :source_root:  Core/Src/
+  :inc_root:     Core/Inc/
+  :test_root:    test/
