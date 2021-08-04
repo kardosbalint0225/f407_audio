@@ -19,15 +19,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "i2c.h"
-#include "i2s.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "audio_io.h"
+#include "cs43l22.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +43,63 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t rx_data_i2c[256];
+uint8_t cs43l22_default[] = {
+		CS43L22_ID_DEFAULT,
+		POWER_CONTROL_1_DEFAULT,
+		RESERVED_03H_DEFAULT,
+		POWER_CONTROL_2_DEFAULT,
+		CLOCKING_CONTROL_DEFAULT,
+		INTERFACE_CONTROL_1_DEFAULT,
+		INTERFACE_CONTROL_2_DEFAULT,
+		PASSTHROUGH_A_SELECT_DEFAULT,
+		PASSTHROUGH_B_SELECT_DEFAULT,
+		ANALOG_ZC_AND_SR_SETTINGS_DEFAULT,
+		RESERVED_0BH_DEFAULT,
+		PASSTHROUGH_GANG_CONTROL_DEFAULT,
+		PLAYBACK_CONTROL_1_DEFAULT,
+		MISCELLANEOUS_CONTROL_DEFAULT,
+		PLAYBACK_CONTROL_2_DEFAULT,
+		RESERVED_10H_DEFAULT,
+		RESERVED_11H_DEFAULT,
+		RESERVED_12H_DEFAULT,
+		RESERVED_13H_DEFAULT,
+		PASSTHROUGH_A_VOLUME_DEFAULT,
+		PASSTHROUGH_B_VOLUME_DEFAULT,
+		RESERVED_16H_DEFAULT,
+		RESERVED_17H_DEFAULT,
+		RESERVED_18H_DEFAULT,
+		RESERVED_19H_DEFAULT,
+		PCMA_VOLUME_DEFAULT,
+		PCMB_VOLUME_DEFAULT,
+		BEEP_FREQUENCY_ON_TIME_DEFAULT,
+		BEEP_VOLUME_OFF_TIME_DEFAULT,
+		BEEP_TONE_CONFIG_DEFAULT,
+		TONE_CONTROL_DEFAULT,
+		MASTER_A_VOLUME_DEFAULT,
+		MASTER_B_VOLUME_DEFAULT,
+		HEADPHONE_A_VOLUME_DEFAULT,
+		HEADPHONE_B_VOLUME_DEFAULT,
+		SPEAKER_A_VOLUME_DEFAULT,
+		SPEAKER_B_VOLUME_DEFAULT,
+		CHANNEL_MIXER_AND_SWAP_DEFAULT,
+		LIMITER_CONTROL_1_DEFAULT,
+		LIMITER_CONTROL_2_DEFAULT,
+		LIMITER_ATTACK_RATE_DEFAULT,
+		RESERVED_2AH_DEFAULT,
+		RESERVED_2BH_DEFAULT,
+		RESERVED_2CH_DEFAULT,
+		RESERVED_2DH_DEFAULT,
+		OVERFLOW_AND_CLOCK_STATUS_DEFAULT,
+		BATTERY_COMPENSATION_DEFAULT,
+		VP_BATTERY_LEVEL_DEFAULT,
+		SPEAKER_STATUS_DEFAULT,
+		RESERVED_32H_DEFAULT,
+		RESERVED_33H_DEFAULT,
+		CHARGE_PUMP_FREQUENCY_DEFAULT
+};
+volatile uint8_t mismatch[10];
+extern volatile bool is_ready;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,23 +129,38 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  audio_status_t status;
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  status = audio_io_init();
+  if (AUDIO_IO_OK != status) {
+	  Error_Handler();
+  }
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_I2S3_Init();
-  MX_TIM3_Init();
-  MX_USART2_UART_Init();
+
   /* USER CODE BEGIN 2 */
+  uint16_t size = sizeof(cs43l22_default);
+  status = audio_io_read((0x80 | CS43L22_ID), rx_data_i2c, size, false);
+
+  if (AUDIO_IO_OK != status) {
+	  Error_Handler();
+  }
+
+  while(!is_ready);
+
+  int j = 0;
+  for (int i = 0; i < size; i++) {
+	  if (cs43l22_default[i] != rx_data_i2c[i]) {
+		  mismatch[j] = i;
+		  j++;
+	  }
+  }
 
   /* USER CODE END 2 */
 
@@ -129,8 +196,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 168;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 336;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -158,6 +225,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
 
 /* USER CODE BEGIN 4 */
 

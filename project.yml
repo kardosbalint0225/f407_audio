@@ -48,6 +48,7 @@
   #  2) add entries to the :common: section (e.g. :test: has TEST defined)
   :common: &common_defines
     - STM32F407xx
+    - USE_HAL_I2C_REGISTER_CALLBACKS
   :test:
     - *common_defines
     - TEST

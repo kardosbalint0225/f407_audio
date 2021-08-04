@@ -28,8 +28,16 @@ static void audio_io_reset(void)
 
 static void dma_init(void)
 {
-	HAL_NVIC_SetPriority_Expect(DMAx_Streamy_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ_Expect(DMAx_Streamy_IRQn);
+	HAL_NVIC_SetPriority_Expect(DMA_I2CxTX_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ_Expect(DMA_I2CxTX_Stream_IRQn);
+	HAL_NVIC_SetPriority_Expect(DMA_I2CxRX_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ_Expect(DMA_I2CxRX_Stream_IRQn);
+}
+
+static void dma_deinit(void)
+{
+	HAL_NVIC_DisableIRQ_Expect(DMA_I2CxTX_Stream_IRQn);
+	HAL_NVIC_DisableIRQ_Expect(DMA_I2CxRX_Stream_IRQn);
 }
 
 static void i2c_gpio_init(void)
@@ -66,20 +74,20 @@ void tearDown(void)
 {
 }
 
+/*
+ *  Audio IO Init tests
+ */
 void test_audio_io_init_for_ok(void)
 {
+	audio_io_error_reset();
 	reset_gpio_init();
 	audio_io_reset();
 	dma_init();
-	
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
-	
-	i2c_gpio_init();
-	HAL_DMA_Init_IgnoreAndReturn(HAL_OK);
-	i2c_it_init();
-	
-	HAL_I2C_Init_IgnoreAndReturn(HAL_OK);
-	HAL_I2C_IsDeviceReady_IgnoreAndReturn(HAL_OK);
+	HAL_I2C_RegisterCallback_IgnoreAndReturn(HAL_OK);
+
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_RESET);
+	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
+	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_OK;
@@ -89,12 +97,16 @@ void test_audio_io_init_for_ok(void)
 
 void test_audio_io_init_for_busy_state_error(void)
 {
+	audio_io_error_reset();
 	reset_gpio_init();
 	audio_io_reset();
 	dma_init();
+	HAL_I2C_RegisterCallback_IgnoreAndReturn(HAL_OK);
 	
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_BUSY);
-	
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_BUSY);
+	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
+	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
+
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_I2C_INIT_ERROR;
 	actual = audio_io_init();
@@ -103,18 +115,15 @@ void test_audio_io_init_for_busy_state_error(void)
 
 void test_audio_io_init_for_device_not_ready_error(void)
 {
+	audio_io_error_reset();
 	reset_gpio_init();
 	audio_io_reset();
 	dma_init();
+	HAL_I2C_RegisterCallback_IgnoreAndReturn(HAL_OK);
 	
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
-	
-	i2c_gpio_init();
-	HAL_DMA_Init_IgnoreAndReturn(HAL_OK);
-	i2c_it_init();
-    
-	HAL_I2C_Init_IgnoreAndReturn(HAL_OK);
-	HAL_I2C_IsDeviceReady_IgnoreAndReturn(HAL_BUSY);
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_RESET);
+	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
+	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_BUSY);
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_I2C_INIT_ERROR;
@@ -124,17 +133,15 @@ void test_audio_io_init_for_device_not_ready_error(void)
 
 void test_audio_io_init_for_ll_init_error(void)
 {
+	audio_io_error_reset();
 	reset_gpio_init();
 	audio_io_reset();
 	dma_init();
+	HAL_I2C_RegisterCallback_IgnoreAndReturn(HAL_OK);
 	
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
-	
-	i2c_gpio_init();
-	HAL_DMA_Init_IgnoreAndReturn(HAL_OK);
-	i2c_it_init();
-    
-	HAL_I2C_Init_IgnoreAndReturn(HAL_ERROR);
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_RESET);
+	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_ERROR);
+	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_I2C_INIT_ERROR;
@@ -142,32 +149,19 @@ void test_audio_io_init_for_ll_init_error(void)
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
-void test_audio_io_init_for_dma_init_error(void)
-{
-	reset_gpio_init();
-	audio_io_reset();
-	dma_init();
-	
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
-	
-	i2c_gpio_init();
-	
-	HAL_DMA_Init_IgnoreAndReturn(HAL_ERROR);
-	
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_I2C_INIT_ERROR;
-	actual = audio_io_init();
-	TEST_ASSERT_EQUAL((int)expected, (int)actual);
-}
-
+/*
+ *  Audio IO DeInit tests
+ */
 void test_audio_io_deinit_for_ok(void)
 {	
+	audio_io_error_reset();
 	reset_gpio_deinit();
-	i2c_gpio_deinit();
-	i2c_it_deinit();	
+	HAL_I2C_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
+
+	HAL_I2C_DeInit_ExpectAnyArgsAndReturn(HAL_OK);
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_RESET);
 	
-	HAL_I2C_DeInit_IgnoreAndReturn(HAL_OK);
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
+	dma_deinit();
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_OK;
@@ -177,12 +171,14 @@ void test_audio_io_deinit_for_ok(void)
 
 void test_audio_io_deinit_for_ll_deinit_error(void)
 {	
+	audio_io_error_reset();
 	reset_gpio_deinit();
-	i2c_gpio_deinit();
-	i2c_it_deinit();	
+	HAL_I2C_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
+
+	HAL_I2C_DeInit_ExpectAnyArgsAndReturn(HAL_ERROR);
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_RESET);
 	
-	HAL_I2C_DeInit_IgnoreAndReturn(HAL_ERROR);
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_RESET);
+	dma_deinit();
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_I2C_DEINIT_ERROR;
@@ -192,18 +188,19 @@ void test_audio_io_deinit_for_ll_deinit_error(void)
 
 void test_audio_io_deinit_for_state_error(void)
 {	
+	audio_io_error_reset();
 	reset_gpio_deinit();
-	i2c_gpio_deinit();
-	i2c_it_deinit();	
+	HAL_I2C_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
 	
-	HAL_I2C_DeInit_IgnoreAndReturn(HAL_OK);
-	HAL_I2C_GetState_IgnoreAndReturn(HAL_I2C_STATE_BUSY);
+	HAL_I2C_DeInit_ExpectAnyArgsAndReturn(HAL_OK);
+	HAL_I2C_GetState_ExpectAnyArgsAndReturn(HAL_I2C_STATE_BUSY);
+
+	dma_deinit();
 	
 	audio_status_t actual;
 	audio_status_t expected = AUDIO_IO_I2C_DEINIT_ERROR;
 	actual = audio_io_deinit();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
-
 
 #endif // TEST
