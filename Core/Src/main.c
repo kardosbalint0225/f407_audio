@@ -24,6 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include "audio_io.h"
 #include "cs43l22.h"
+#include "debug_uart.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -161,6 +163,18 @@ int main(void)
 		  j++;
 	  }
   }
+
+  debug_uart_status_t debug_uart_state = debug_uart_init();
+  if (DEBUG_UART_OK != debug_uart_state) {
+	  Error_Handler();
+  }
+
+  printf("Hello.\r\n");
+  printf("bello \r\n");
+  printf("Some short text to test.\r\n");
+  printf("It is important to place the newline character because the stdout is buffered.\r\n");
+  printf("That was a longer text than before.\r\n");
+
 
   /* USER CODE END 2 */
 

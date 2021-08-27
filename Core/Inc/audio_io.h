@@ -25,8 +25,8 @@
 	#define __I2Cx_FORCE_RESET()              		
 	#define __I2Cx_RELEASE_RESET()            		
 
-	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
-	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
+//	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
+//	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
 	
 //	#define AUDIO_IO_DEVICE_I2C_ADDRESS            	0x94	//// (1 0 0 1 0 1 AD0=0) << 1
 	
@@ -35,17 +35,17 @@
 	#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	
 	#define __AUDIO_IO_RESET_GPIO_CLK_DISABLE()  	
 	
-	#define I2CxTX_DMA_STREAM						DMA1_Stream6	//DMA1_Stream7
+	#define I2CxTX_DMA_STREAM						DMA1_Stream7	//DMA1_Stream7
 	#define I2CxTX_DMA_CHANNEL						DMA_CHANNEL_1
 	#define __I2CxTX_DMA_CLK_ENABLE()
 	#define __I2CxTX_DMA_CLK_DISABLE()
-	#define DMA_I2CxTX_Stream_IRQn					DMA1_Stream6_IRQn
+	#define I2CxTX_DMA_Stream_IRQn					DMA1_Stream7_IRQn
 
 	#define I2CxRX_DMA_STREAM						DMA1_Stream0	//DMA1_Stream5
 	#define I2CxRX_DMA_CHANNEL						DMA_CHANNEL_1
 	#define __I2CxRX_DMA_CLK_ENABLE()
 	#define __I2CxRX_DMA_CLK_DISABLE()
-	#define DMA_I2CxRX_Stream_IRQn					DMA1_Stream0_IRQn
+	#define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
 	
 #else
 	#define I2Cx                            		I2C1
@@ -65,8 +65,8 @@
 	#define __I2Cx_FORCE_RESET()              		__HAL_RCC_I2C1_FORCE_RESET()
 	#define __I2Cx_RELEASE_RESET()            		__HAL_RCC_I2C1_RELEASE_RESET()
 
-	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
-	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
+//	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
+//	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
 	
 //	#define AUDIO_IO_DEVICE_I2C_ADDRESS            	0x94	// (1 0 0 1 0 1 AD0=0) << 1  
 	
@@ -75,17 +75,17 @@
 	#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	__HAL_RCC_GPIOD_CLK_ENABLE()
 	#define __AUDIO_IO_RESET_GPIO_CLK_DISABLE()  	__HAL_RCC_GPIOD_CLK_DISABLE()
 	
-	#define I2CxTX_DMA_STREAM						DMA1_Stream6	//DMA1_Stream7
+	#define I2CxTX_DMA_STREAM						DMA1_Stream7	//DMA1_Stream6
 	#define I2CxTX_DMA_CHANNEL						DMA_CHANNEL_1
 	#define __I2CxTX_DMA_CLK_ENABLE()				__HAL_RCC_DMA1_CLK_ENABLE()
 	#define __I2CxTX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
-	#define DMA_I2CxTX_Stream_IRQn					DMA1_Stream6_IRQn
+	#define I2CxTX_DMA_Stream_IRQn					DMA1_Stream7_IRQn
 
 	#define I2CxRX_DMA_STREAM						DMA1_Stream0	//DMA1_Stream5
 	#define I2CxRX_DMA_CHANNEL						DMA_CHANNEL_1
 	#define __I2CxRX_DMA_CLK_ENABLE()				__HAL_RCC_DMA1_CLK_ENABLE()
 	#define __I2CxRX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
-	#define DMA_I2CxRX_Stream_IRQn					DMA1_Stream0_IRQn
+	#define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
 	
 #endif
 		// + i2s instance

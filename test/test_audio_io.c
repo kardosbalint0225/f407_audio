@@ -28,16 +28,16 @@ static void audio_io_reset(void)
 
 static void dma_init(void)
 {
-	HAL_NVIC_SetPriority_Expect(DMA_I2CxTX_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ_Expect(DMA_I2CxTX_Stream_IRQn);
-	HAL_NVIC_SetPriority_Expect(DMA_I2CxRX_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ_Expect(DMA_I2CxRX_Stream_IRQn);
+	HAL_NVIC_SetPriority_Expect(I2CxTX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ_Expect(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_SetPriority_Expect(I2CxRX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ_Expect(I2CxRX_DMA_Stream_IRQn);
 }
 
 static void dma_deinit(void)
 {
-	HAL_NVIC_DisableIRQ_Expect(DMA_I2CxTX_Stream_IRQn);
-	HAL_NVIC_DisableIRQ_Expect(DMA_I2CxRX_Stream_IRQn);
+	HAL_NVIC_DisableIRQ_Expect(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_DisableIRQ_Expect(I2CxRX_DMA_Stream_IRQn);
 }
 
 static void i2c_gpio_init(void)
@@ -50,20 +50,6 @@ static void i2c_gpio_deinit(void)
 {
 	HAL_GPIO_DeInit_Expect(I2Cx_SCL_GPIO_PORT, I2Cx_SCL_PIN);
 	HAL_GPIO_DeInit_Expect(I2Cx_SDA_GPIO_PORT, I2Cx_SDA_PIN);
-}
-
-static void i2c_it_init(void)
-{
-	HAL_NVIC_SetPriority_Expect(I2Cx_EV_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ_Expect(I2Cx_EV_IRQn);
-	HAL_NVIC_SetPriority_Expect(I2Cx_ER_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ_Expect(I2Cx_ER_IRQn);
-}
-
-static void i2c_it_deinit(void)
-{
-	HAL_NVIC_DisableIRQ_Expect(I2Cx_EV_IRQn);	
-	HAL_NVIC_DisableIRQ_Expect(I2Cx_ER_IRQn);
 }
 
 void setUp(void)

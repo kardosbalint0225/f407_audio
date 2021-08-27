@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __F4xx_H
 #define __F4xx_H
 
@@ -30,4 +32,6 @@ typedef enum
 #endif /* __cplusplus */
 
 #endif /* __STM32F4xx_H */
+
+#endif
 

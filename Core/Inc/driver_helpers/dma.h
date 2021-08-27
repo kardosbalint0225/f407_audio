@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __DMA_H
 #define __DMA_H
 
@@ -170,4 +172,6 @@ uint32_t             HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
 #endif
 
 #endif 
+
+#endif
 

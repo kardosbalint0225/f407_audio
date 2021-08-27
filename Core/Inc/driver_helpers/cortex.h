@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __CORTEX_H
 #define __CORTEX_H
 
@@ -28,4 +30,6 @@ void HAL_SYSTICK_Callback(void);
 #endif
 
 #endif 
+
+#endif
 

@@ -44,6 +44,8 @@
 /* USER CODE BEGIN PV */
 extern DMA_HandleTypeDef hdma_i2c_tx;
 extern DMA_HandleTypeDef hdma_i2c_rx;
+extern DMA_HandleTypeDef hdma_uart_tx;
+extern UART_HandleTypeDef huart;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -218,14 +220,22 @@ void EXTI0_IRQHandler(void)
 void DMA1_Stream0_IRQHandler(void)
 {
 	HAL_DMA_IRQHandler(&hdma_i2c_rx);
-	//HAL_DMA_IRQHandler(hi2c.hdmarx);
 }
 
 void DMA1_Stream6_IRQHandler(void)
 {
+	HAL_DMA_IRQHandler(&hdma_uart_tx);
+}
+
+void DMA1_Stream7_IRQHandler(void)
+{
 	HAL_DMA_IRQHandler(&hdma_i2c_tx);
 }
 
+void USART2_IRQHandler(void)
+{
+	HAL_UART_IRQHandler(&huart);
+}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

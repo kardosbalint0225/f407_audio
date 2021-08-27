@@ -73,7 +73,7 @@ static void audio_io_reset_pin_init(void)
 static void audio_io_reset_pin_deinit(void)
 {
 	HAL_GPIO_DeInit(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN);
-	__AUDIO_IO_RESET_GPIO_CLK_DISABLE();
+	//__AUDIO_IO_RESET_GPIO_CLK_DISABLE();
 }
 
 static void audio_io_reset(void)
@@ -87,10 +87,10 @@ static void DMA_Init(void)
 {
 	__I2CxTX_DMA_CLK_ENABLE();
 	__I2CxRX_DMA_CLK_ENABLE();
-	HAL_NVIC_SetPriority(DMA_I2CxTX_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA_I2CxTX_Stream_IRQn);
-	HAL_NVIC_SetPriority(DMA_I2CxRX_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(DMA_I2CxRX_Stream_IRQn);
+	HAL_NVIC_SetPriority(I2CxTX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_SetPriority(I2CxRX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(I2CxRX_DMA_Stream_IRQn);
 }
 
 static HAL_StatusTypeDef I2Cx_Init(void)
@@ -219,10 +219,10 @@ audio_status_t audio_io_deinit(void)
 
 static void DMA_DeInit(void)
 {
-	HAL_NVIC_DisableIRQ(DMA_I2CxTX_Stream_IRQn);
-	HAL_NVIC_DisableIRQ(DMA_I2CxRX_Stream_IRQn);
-	__I2CxTX_DMA_CLK_DISABLE();
-	__I2CxRX_DMA_CLK_DISABLE();
+	HAL_NVIC_DisableIRQ(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_DisableIRQ(I2CxRX_DMA_Stream_IRQn);
+	//__I2CxTX_DMA_CLK_DISABLE();
+	//__I2CxRX_DMA_CLK_DISABLE();
 }
 
 static HAL_StatusTypeDef I2Cx_DeInit(void)

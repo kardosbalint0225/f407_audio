@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __I2C_EX_H
 #define __I2C_EX_H
 
@@ -22,4 +24,6 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
 #endif
 
 #endif 
+
+#endif
 

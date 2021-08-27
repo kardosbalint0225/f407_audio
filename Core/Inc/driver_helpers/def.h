@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __F4xx_HAL_DEF
 #define __F4xx_HAL_DEF
 
@@ -33,4 +35,7 @@ typedef enum
 #endif
 
 #endif 
+
+#endif
+
 

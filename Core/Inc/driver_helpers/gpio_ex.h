@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __GPIO_EX_H
 #define __GPIO_EX_H
 
@@ -56,4 +58,8 @@
 #endif
 
 #endif 
+
+#endif
+
+
 

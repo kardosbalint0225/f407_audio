@@ -49,6 +49,7 @@
   :common: &common_defines
     - STM32F407xx
     - USE_HAL_I2C_REGISTER_CALLBACKS
+    - USE_HAL_UART_REGISTER_CALLBACKS
   :test:
     - *common_defines
     - TEST

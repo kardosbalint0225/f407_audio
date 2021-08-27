@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __HAL_H
 #define __HAL_H
 
@@ -51,4 +53,6 @@ uint32_t HAL_GetUIDw2(void);
 #endif
 
 #endif 
+
+#endif
 

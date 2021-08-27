@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __GPIO_H
 #define __GPIO_H
 
@@ -85,4 +87,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 #endif
 
 #endif 
+
+#endif
+
 

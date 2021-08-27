@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __DMA_EX_H
 #define __DMA_EX_H
 
@@ -22,4 +24,6 @@ HAL_StatusTypeDef HAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
 #endif
 
 #endif 
+
+#endif
 

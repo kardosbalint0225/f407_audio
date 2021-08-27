@@ -1,3 +1,5 @@
+#ifdef TEST
+
 #ifndef __CM4_H
 #define __CM4_H
 
@@ -291,3 +293,4 @@ typedef struct
 
 #endif 
 
+#endif
