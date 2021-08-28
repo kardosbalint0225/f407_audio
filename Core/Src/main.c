@@ -101,7 +101,7 @@ uint8_t cs43l22_default[] = {
 		CHARGE_PUMP_FREQUENCY_DEFAULT
 };
 volatile uint8_t mismatch[10];
-extern volatile bool is_ready;
+//extern volatile bool is_ready;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -154,7 +154,7 @@ int main(void)
 	  Error_Handler();
   }
 
-  while(!is_ready);
+  //while(!is_ready);
 
   int j = 0;
   for (int i = 0; i < size; i++) {

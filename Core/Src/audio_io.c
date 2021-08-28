@@ -273,7 +273,7 @@ void I2Cx_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void I2Cx_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	is_ready = true;
+	//is_ready = true;
 }
 
 void I2Cx_ErrorCallback(I2C_HandleTypeDef *hi2c)

@@ -1,5 +1,6 @@
 #include "debug_uart.h"
 #include <stdio.h>
+#include <errno.h>
 #include <stdbool.h>
 #include "fifo.h"
 
@@ -11,12 +12,13 @@
 	#include "uart.h"
 #else
 	#include "stm32f4xx_hal.h"
+    #include <sys/unistd.h>
 #endif
 
 UART_HandleTypeDef huart;
 DMA_HandleTypeDef hdma_uart_tx;
 static debug_uart_err_t debug_uart_error;
-static bool uart_tx_status_busy;
+static bool uart_dma_tx_status_busy;
 static fifo_t uart_tx_fifo;
 static uint8_t uart_tx_buffer[128] __attribute__((aligned(128)));
 
@@ -24,6 +26,7 @@ static HAL_StatusTypeDef UARTx_Init(void);
 static HAL_StatusTypeDef UARTx_DeInit(void);
 static void DMA_Init(void);
 static void DMA_DeInit(void);
+static void UARTx_ErrorHandler(void);
 
 int _write(int file, char *ptr, int len);
 
@@ -44,14 +47,19 @@ int _write(int file, char *ptr, int len)
     HAL_StatusTypeDef status;
     int retc;
 
-    if (false == uart_tx_status_busy) {
+    if ((STDOUT_FILENO != file) && (STDERR_FILENO != file)) {
+        errno = EBADF;
+        return -1;
+    }
+
+    if (false == uart_dma_tx_status_busy) {
 
         for (int i = 0; i < len; i++) {
             uart_tx_buffer[i] = ptr[i];
         }
 
         status = HAL_UART_Transmit_DMA(&huart, uart_tx_buffer, (uint16_t)len);
-        uart_tx_status_busy = true;
+        uart_dma_tx_status_busy = true;
         
         if (HAL_OK == status) {
             retc = len;
@@ -78,7 +86,7 @@ debug_uart_status_t debug_uart_init(void)
 {
     HAL_StatusTypeDef status;
     debug_uart_status_t retc;
-    uart_tx_status_busy = false;
+    uart_dma_tx_status_busy = false;
 
     fifo_init(&uart_tx_fifo);
 
@@ -208,14 +216,18 @@ void UARTx_MspInit(UART_HandleTypeDef* huart)
     hdma_uart_tx.Init.Mode                = DMA_NORMAL;
     hdma_uart_tx.Init.Priority            = DMA_PRIORITY_LOW;
     hdma_uart_tx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+    hdma_uart_tx.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+    hdma_uart_tx.Init.MemBurst            = DMA_MBURST_SINGLE;
+    hdma_uart_tx.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
     if (HAL_OK != HAL_DMA_Init(&hdma_uart_tx)) {
         debug_uart_error.dmatx = 1;
     }
 
     __HAL_LINKDMA(huart, hdmatx, hdma_uart_tx);
 
-    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(USART2_IRQn);
+    HAL_NVIC_SetPriority(USARTx_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USARTx_IRQn);
 }
 
 void UARTx_MspDeInit(UART_HandleTypeDef* huart)
@@ -228,6 +240,8 @@ void UARTx_MspDeInit(UART_HandleTypeDef* huart)
     if (HAL_OK != HAL_DMA_DeInit(&hdma_uart_tx)) {
         debug_uart_error.dmatx = 1;
     }
+
+    HAL_NVIC_DisableIRQ(USARTx_IRQn);
 }
 
 void UARTx_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -241,12 +255,18 @@ void UARTx_TxCpltCallback(UART_HandleTypeDef *huart)
         }
 
     } else {
-        uart_tx_status_busy = false;
+        uart_dma_tx_status_busy = false;
     }
 }
 
 void UARTx_ErrorCallback(UART_HandleTypeDef *huart)
 {
+    UARTx_ErrorHandler();
+}
 
+static void UARTx_ErrorHandler(void)
+{
+    UARTx_DeInit();
+    UARTx_Init();
 }
 
