@@ -154,7 +154,7 @@ int main(void)
 	  Error_Handler();
   }
 
-  //while(!is_ready);
+  while(!audio_io_i2c_rx_cplt);
 
   int j = 0;
   for (int i = 0; i < size; i++) {

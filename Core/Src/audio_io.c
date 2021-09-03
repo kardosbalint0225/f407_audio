@@ -6,20 +6,26 @@
 	#include "gpio.h"
 	#include "hal.h"
 	#include "i2c.h"
+	#include "i2s.h"
 #else
 	#include "stm32f4xx_hal.h"
 #endif
 
-volatile bool is_ready = false;
+volatile bool audio_io_i2c_rx_cplt = false;
+volatile bool audio_io_i2c_tx_cplt = false;
 
 I2C_HandleTypeDef hi2c;
+I2S_HandleTypeDef hi2s;
 DMA_HandleTypeDef hdma_i2c_tx;
 DMA_HandleTypeDef hdma_i2c_rx;
+DMA_HandleTypeDef hdma_i2s_tx;
 
 static audio_io_err_t audio_io_error;
 
 static HAL_StatusTypeDef I2Cx_Init(void);
 static HAL_StatusTypeDef I2Cx_DeInit(void);
+static HAL_StatusTypeDef I2Sx_Init(audio_stream_t *audio_stream);
+static HAL_StatusTypeDef I2Sx_DeInit(void);
 
 static void I2Cx_ErrorHandler(void);
 static void DMA_Init(void);
@@ -30,9 +36,11 @@ static void audio_io_reset_pin_deinit(void);
 
 void I2Cx_MspInit(I2C_HandleTypeDef *hi2c);
 void I2Cx_MspDeInit(I2C_HandleTypeDef *hi2c);
-void I2Cx_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
+void I2Cx_MemTxCpltCallback(I2C_HandleTypeDef *hi2c);
 void I2Cx_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 void I2Cx_ErrorCallback(I2C_HandleTypeDef *hi2c);
+void I2Sx_MspInit(I2S_HandleTypeDef *hi2s);
+void I2Sx_MspDeInit(I2S_HandleTypeDef *hi2s);
 
 #ifdef TEST
 void audio_io_error_reset(void)
@@ -41,6 +49,33 @@ void audio_io_error_reset(void)
 }
 #endif
 
+/**< ****************************************************************************************************************************** */
+/**< DMA initialization/deinitialization																					        */
+/**< ****************************************************************************************************************************** */
+static void DMA_Init(void)
+{
+	__I2CxTX_DMA_CLK_ENABLE();
+	__I2CxRX_DMA_CLK_ENABLE();
+	HAL_NVIC_SetPriority(I2CxTX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_SetPriority(I2CxRX_DMA_Stream_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(I2CxRX_DMA_Stream_IRQn);
+	/**< I2S DMA init */
+}
+
+static void DMA_DeInit(void)
+{
+	HAL_NVIC_DisableIRQ(I2CxTX_DMA_Stream_IRQn);
+	HAL_NVIC_DisableIRQ(I2CxRX_DMA_Stream_IRQn);
+	/**< I2S DMA deinit */
+	//__I2CxTX_DMA_CLK_DISABLE();
+	//__I2CxRX_DMA_CLK_DISABLE();
+}
+
+
+/**< ****************************************************************************************************************************** */
+/**< Audio I/O initialization 																								        */
+/**< ****************************************************************************************************************************** */
 audio_status_t audio_io_init(void)
 {	
 	HAL_StatusTypeDef status;
@@ -70,27 +105,11 @@ static void audio_io_reset_pin_init(void)
 	HAL_GPIO_Init(AUDIO_IO_RESET_PORT, &GPIO_InitStruct);
 }
 
-static void audio_io_reset_pin_deinit(void)
-{
-	HAL_GPIO_DeInit(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN);
-	//__AUDIO_IO_RESET_GPIO_CLK_DISABLE();
-}
-
 static void audio_io_reset(void)
 {	
 	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_RESET);		/* Power Down the codec */
 	HAL_Delay(5); 																	/* Wait for a delay to ensure registers erasing */
 	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_SET);		/* Power on the codec */
-}
-
-static void DMA_Init(void)
-{
-	__I2CxTX_DMA_CLK_ENABLE();
-	__I2CxRX_DMA_CLK_ENABLE();
-	HAL_NVIC_SetPriority(I2CxTX_DMA_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(I2CxTX_DMA_Stream_IRQn);
-	HAL_NVIC_SetPriority(I2CxRX_DMA_Stream_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(I2CxRX_DMA_Stream_IRQn);
 }
 
 static HAL_StatusTypeDef I2Cx_Init(void)
@@ -122,7 +141,7 @@ static HAL_StatusTypeDef I2Cx_Init(void)
 		audio_io_error.i2c.init = 1;
 	}
 	
-	HAL_I2C_RegisterCallback(&hi2c, HAL_I2C_MASTER_TX_COMPLETE_CB_ID, I2Cx_MasterTxCpltCallback);
+	HAL_I2C_RegisterCallback(&hi2c, HAL_I2C_MEM_TX_COMPLETE_CB_ID, I2Cx_MemTxCpltCallback);
 	HAL_I2C_RegisterCallback(&hi2c, HAL_I2C_MEM_RX_COMPLETE_CB_ID, I2Cx_MemRxCpltCallback);
 	HAL_I2C_RegisterCallback(&hi2c, HAL_I2C_ERROR_CB_ID, I2Cx_ErrorCallback);
 
@@ -201,6 +220,10 @@ void I2Cx_MspInit(I2C_HandleTypeDef *hi2c)
 	__HAL_LINKDMA(hi2c, hdmarx, hdma_i2c_rx);
 }
 
+
+/**< ****************************************************************************************************************************** */
+/**< Audio I/O deinitialization 																								    */
+/**< ****************************************************************************************************************************** */
 audio_status_t audio_io_deinit(void)
 {
 	HAL_StatusTypeDef status;
@@ -217,19 +240,17 @@ audio_status_t audio_io_deinit(void)
 	return retc;
 }
 
-static void DMA_DeInit(void)
+static void audio_io_reset_pin_deinit(void)
 {
-	HAL_NVIC_DisableIRQ(I2CxTX_DMA_Stream_IRQn);
-	HAL_NVIC_DisableIRQ(I2CxRX_DMA_Stream_IRQn);
-	//__I2CxTX_DMA_CLK_DISABLE();
-	//__I2CxRX_DMA_CLK_DISABLE();
+	HAL_GPIO_DeInit(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN);
+	//__AUDIO_IO_RESET_GPIO_CLK_DISABLE();
 }
 
 static HAL_StatusTypeDef I2Cx_DeInit(void)
 {
 	HAL_StatusTypeDef status;
 	
-	HAL_I2C_UnRegisterCallback(&hi2c, HAL_I2C_MASTER_TX_COMPLETE_CB_ID);
+	HAL_I2C_UnRegisterCallback(&hi2c, HAL_I2C_MEM_TX_COMPLETE_CB_ID);
 	HAL_I2C_UnRegisterCallback(&hi2c, HAL_I2C_MEM_RX_COMPLETE_CB_ID);
 	HAL_I2C_UnRegisterCallback(&hi2c, HAL_I2C_ERROR_CB_ID);
 
@@ -266,14 +287,17 @@ void I2Cx_MspDeInit(I2C_HandleTypeDef *hi2c)
 }
 
 
-void I2Cx_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
+/**< ****************************************************************************************************************************** */
+/**< Audio I/O Callbacks         																								    */
+/**< ****************************************************************************************************************************** */
+void I2Cx_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-
+	audio_io_i2c_tx_cplt = true;
 }
 
 void I2Cx_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	//is_ready = true;
+	audio_io_i2c_rx_cplt = true;
 }
 
 void I2Cx_ErrorCallback(I2C_HandleTypeDef *hi2c)
@@ -287,6 +311,10 @@ static void I2Cx_ErrorHandler(void)
 	I2Cx_Init();
 }
 
+
+/**< ****************************************************************************************************************************** */
+/**< Audio I/O Read/Write 																								            */
+/**< ****************************************************************************************************************************** */
 audio_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking)
 {
 	HAL_StatusTypeDef status;
@@ -296,11 +324,10 @@ audio_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t si
 	uint16_t data_size    = (uint16_t)size;
 	uint32_t timeout      = 10;
 
-	is_ready = false;
-
 	if (true == blocking) {
 		status = HAL_I2C_Mem_Read(&hi2c, AUDIO_IO_DEVICE_ADDRESS, address, address_size, data, data_size, timeout);
 	} else {
+		audio_io_i2c_rx_cplt = false;
 		status = HAL_I2C_Mem_Read_DMA(&hi2c, AUDIO_IO_DEVICE_ADDRESS, address, address_size, data, data_size);
 	}
 
@@ -308,4 +335,69 @@ audio_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t si
 
 	return retc;
 }
+
+audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking)
+{
+	HAL_StatusTypeDef status;
+	audio_status_t retc;
+	uint16_t address      = (uint16_t)register_address;
+	uint16_t address_size = sizeof(uint8_t);
+	uint16_t data_size    = (uint16_t)size;
+	uint32_t timeout      = 10;
+
+	if (true == blocking) {
+		status = HAL_I2C_Mem_Write(&hi2c, AUDIO_IO_DEVICE_ADDRESS, address, address_size, data, data_size, timeout);
+	} else {
+		audio_io_i2c_tx_cplt = false;
+		status = HAL_I2C_Mem_Write_DMA(&hi2c, AUDIO_IO_DEVICE_ADDRESS, address, address_size, data, data_size);
+	}
+
+	retc = (HAL_OK != status) ? (AUDIO_IO_I2C_WRITE_ERROR) : (AUDIO_IO_OK);
+
+	return retc;
+}
+
+
+/**< ****************************************************************************************************************************** */
+/**< Audio Stream initialization 																								    */
+/**< ****************************************************************************************************************************** */
+audio_status_t audio_stream_interface_init(audio_stream_t *audio_stream)
+{
+
+}
+
+static HAL_StatusTypeDef I2Sx_Init(audio_stream_t *audio_stream)
+{
+	hi2s.Instance = I2Sx;
+	hi2s.Init.Mode = I2S_MODE_MASTER_TX;
+	hi2s.Init.Standard = audio_stream->standard;
+	hi2s.Init.DataFormat = audio_stream->data_format;
+	//...
+}
+
+void I2Sx_MspInit(I2S_HandleTypeDef *hi2s)
+{
+
+}
+
+
+/**< ****************************************************************************************************************************** */
+/**< Audio Stream deinitialization 																								    */
+/**< ****************************************************************************************************************************** */
+audio_status_t audio_stream_interface_deinit(void)
+{
+
+}
+
+static HAL_StatusTypeDef I2Sx_DeInit(void)
+{
+
+}
+
+void I2Sx_MspDeInit(I2S_HandleTypeDef *hi2s)
+{
+
+}
+
+
 

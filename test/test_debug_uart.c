@@ -9,6 +9,8 @@
 #include "mock_dma.h"
 #include "mock_uart.h"
 
+#include <string.h>
+
 void setUp(void)
 {
 }
@@ -115,5 +117,18 @@ void test_debug_uart_deinit_for_busy_state_error(void)
 
     TEST_ASSERT_EQUAL(expected, actual);
 }
+/*
+void test_write(void)
+{
+    char str[] = "some string.\r\n";
+    int len = strlen(str);
 
+    HAL_UART_Transmit_DMA_ExpectAnyArgsAndReturn(HAL_OK);
+
+    int actual = _write(STDOUT_FILENO, str, len);
+    int expected = len;
+
+    TEST_ASSERT_EQUAL(expected, actual);
+}
+*/
 #endif // TEST

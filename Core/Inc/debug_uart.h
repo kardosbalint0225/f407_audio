@@ -87,4 +87,5 @@ void debug_uart_error_reset(void);
 debug_uart_status_t debug_uart_init(void);
 debug_uart_status_t debug_uart_deinit(void);
 
+
 #endif // DEBUG_UART_H

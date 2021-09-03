@@ -28,8 +28,6 @@
 //	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
 //	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
 	
-//	#define AUDIO_IO_DEVICE_I2C_ADDRESS            	0x94	//// (1 0 0 1 0 1 AD0=0) << 1
-	
 	#define AUDIO_IO_RESET_PORT						GPIOD
 	#define AUDIO_IO_RESET_PIN						GPIO_PIN_4
 	#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	
@@ -46,6 +44,8 @@
 	#define __I2CxRX_DMA_CLK_ENABLE()
 	#define __I2CxRX_DMA_CLK_DISABLE()
 	#define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
+
+	#define I2Sx									SPI2
 	
 #else
 	#define I2Cx                            		I2C1
@@ -68,8 +68,6 @@
 //	#define I2Cx_EV_IRQn                    		I2C1_EV_IRQn
 //	#define I2Cx_ER_IRQn                    		I2C1_ER_IRQn
 	
-//	#define AUDIO_IO_DEVICE_I2C_ADDRESS            	0x94	// (1 0 0 1 0 1 AD0=0) << 1  
-	
 	#define AUDIO_IO_RESET_PORT						GPIOD
 	#define AUDIO_IO_RESET_PIN						GPIO_PIN_4
 	#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	__HAL_RCC_GPIOD_CLK_ENABLE()
@@ -86,6 +84,8 @@
 	#define __I2CxRX_DMA_CLK_ENABLE()				__HAL_RCC_DMA1_CLK_ENABLE()
 	#define __I2CxRX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
 	#define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
+
+	#define I2Sx									SPI2
 	
 #endif
 		// + i2s instance
@@ -96,6 +96,7 @@ typedef enum {
 	AUDIO_IO_I2C_DEINIT_ERROR,
 	AUDIO_IO_DMA_INIT_ERROR,
 	AUDIO_IO_I2C_READ_ERROR,
+	AUDIO_IO_I2C_WRITE_ERROR,
 } audio_status_t;
 
 typedef enum {
@@ -127,20 +128,57 @@ typedef struct {
 	audio_io_i2c_err_t i2c;
 } audio_io_err_t;
 
+/*
+ * stm32f4xx_hal_i2s.h
+ *
+ * standard:        - I2S_STANDARD_PHILIPS
+ *                  - I2S_STANDARD_MSB
+ *                  - I2S_STANDARD_LSB
+ *                  - I2S_STANDARD_PCM_SHORT
+ *                  - I2S_STANDARD_PCM_LONG
+ * 
+ * data_format:     - I2S_DATAFORMAT_16B
+ *                  - I2S_DATAFORMAT_16B_EXTENDED
+ *                  - I2S_DATAFORMAT_24B
+ *                  - I2S_DATAFORMAT_32B
+ * 
+ * audio_frequency: - I2S_AUDIOFREQ_192K
+ *                  - I2S_AUDIOFREQ_96K
+ *                  - I2S_AUDIOFREQ_48K
+ *                  - I2S_AUDIOFREQ_44K
+ *                  - I2S_AUDIOFREQ_32K
+ *                  - I2S_AUDIOFREQ_22K
+ *                  - I2S_AUDIOFREQ_16K
+ *                  - I2S_AUDIOFREQ_11K
+ *                  - I2S_AUDIOFREQ_8K
+ *                  - I2S_AUDIOFREQ_DEFAULT
+ */
+typedef struct {
+	uint32_t standard;
+	uint32_t data_format;
+	uint32_t audio_frequency;
+} audio_stream_t;
+
 /**< ****************************************************************************************************************************** */
 /**< Audio Control Port I/O functions																								*/
 /**< ****************************************************************************************************************************** */
-
-// return type
 audio_status_t audio_io_init(void);
 audio_status_t audio_io_deinit(void);
 //void audio_io_error();
 //void audio_io_reset(void);
 audio_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
-//void 	audio_io_write(const uint8_t chip_address, const uint8_t register_address, const uint8_t *value);
-//void 	audio_stream_write(const uint8_t *buffer, const uint32_t size);
+audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+
 #ifdef TEST
 void audio_io_error_reset(void);
 #endif
+
+/**< ****************************************************************************************************************************** */
+/**< Audio Stream functions            																								*/
+/**< ****************************************************************************************************************************** */
+audio_status_t audio_stream_interface_init(audio_stream_t *audio_stream);
+audio_status_t audio_stream_interface_deinit(void);
+//void 	audio_stream_write(const uint8_t *buffer, const uint32_t size);
+
 
 #endif // AUDIO_IO_H
