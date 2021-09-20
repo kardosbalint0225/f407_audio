@@ -143,6 +143,9 @@ typedef  void (*pI2S_CallbackTypeDef)(I2S_HandleTypeDef *hi2s); /*!< pointer to 
 #define I2S_FULLDUPLEXMODE_DISABLE       (0x00000000U)
 #define I2S_FULLDUPLEXMODE_ENABLE        (0x00000001U)
 
+#define I2S_CPOL_LOW                     (0x00000000U)
+#define I2S_CPOL_HIGH                    (SPI_I2SCFGR_CKPOL)
+
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) ||     defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) ||     defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F469xx) ||     defined(STM32F479xx)
 #define I2S_CLOCK_PLL                    (0x00000000U)
 #define I2S_CLOCK_EXTERNAL               (0x00000001U)

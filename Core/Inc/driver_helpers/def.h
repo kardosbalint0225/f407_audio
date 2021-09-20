@@ -10,11 +10,11 @@
 #include "f4xx.h"
 #include <stddef.h>
  
-#define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD__, __DMA_HANDLE__)               \
+#define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD__, __DMA_HANDLE__) \
 						do{                                                      \
-                              (__HANDLE__)->__PPP_DMA_FIELD__ = &(__DMA_HANDLE__); \
-                              (__DMA_HANDLE__).Parent = (__HANDLE__);             \
-                          } while(0U) 
+                (__HANDLE__)->__PPP_DMA_FIELD__ = &(__DMA_HANDLE__); \
+                (__DMA_HANDLE__).Parent = (__HANDLE__);              \
+            } while(0U) 
  
 typedef enum 
 {

@@ -11,6 +11,8 @@
 
 #include <string.h>
 
+extern int _write(int file, char *ptr, int len);
+
 void setUp(void)
 {
 }
@@ -24,6 +26,7 @@ void test_debug_uart_init_for_ok(void)
     debug_uart_error_reset();
 
     HAL_UART_RegisterCallback_IgnoreAndReturn(HAL_OK);
+    HAL_UART_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
     HAL_NVIC_SetPriority_Expect(UARTxTX_DMA_Stream_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ_Expect(UARTxTX_DMA_Stream_IRQn);
 
@@ -41,6 +44,7 @@ void test_debug_uart_init_for_busy_state_error(void)
     debug_uart_error_reset();
 
     HAL_UART_RegisterCallback_IgnoreAndReturn(HAL_OK);
+    HAL_UART_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
     HAL_NVIC_SetPriority_Expect(UARTxTX_DMA_Stream_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ_Expect(UARTxTX_DMA_Stream_IRQn);
 
@@ -58,6 +62,7 @@ void test_debug_uart_init_for_hal_init_error(void)
     debug_uart_error_reset();
 
     HAL_UART_RegisterCallback_IgnoreAndReturn(HAL_OK);
+    HAL_UART_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
     HAL_NVIC_SetPriority_Expect(UARTxTX_DMA_Stream_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ_Expect(UARTxTX_DMA_Stream_IRQn);
 
@@ -117,7 +122,7 @@ void test_debug_uart_deinit_for_busy_state_error(void)
 
     TEST_ASSERT_EQUAL(expected, actual);
 }
-/*
+
 void test_write(void)
 {
     char str[] = "some string.\r\n";
@@ -130,5 +135,5 @@ void test_write(void)
 
     TEST_ASSERT_EQUAL(expected, actual);
 }
-*/
+
 #endif // TEST

@@ -10,6 +10,7 @@
 	#include "gpio.h"
 	#include "hal.h"
 	#include "uart.h"
+    #include "rcc.h"
 #else
 	#include "stm32f4xx_hal.h"
     #include <sys/unistd.h>
@@ -140,6 +141,7 @@ static HAL_StatusTypeDef UARTx_Init(void)
 
     HAL_UART_RegisterCallback(&huart, HAL_UART_TX_COMPLETE_CB_ID, UARTx_TxCpltCallback);
     HAL_UART_RegisterCallback(&huart, HAL_UART_ERROR_CB_ID, UARTx_ErrorCallback);
+    HAL_UART_UnRegisterCallback(&huart, HAL_UART_TX_HALFCOMPLETE_CB_ID);
 
     status = (0 != debug_uart_error.w) ? (HAL_ERROR) : (HAL_OK);
 

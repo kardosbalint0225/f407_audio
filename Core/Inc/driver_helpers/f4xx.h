@@ -31,7 +31,7 @@ typedef enum
 }
 #endif /* __cplusplus */
 
-#endif /* __STM32F4xx_H */
+#endif /* __F4xx_H */
 
 #endif
 
