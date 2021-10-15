@@ -191,12 +191,17 @@ void test_audio_out_init_for_ok(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = I2S_AUDIOFREQ_96K,
-		.write_callback  = audio_callback,
-		.m0_buffer       = &audio_buffer[0],
-		.m1_buffer       = &audio_buffer[512],
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = I2S_AUDIOFREQ_96K,
+		},
+		
+		.cb_params = {
+			.write_callback  = audio_callback,
+			.m0_buffer       = &audio_buffer[0],
+			.m1_buffer       = &audio_buffer[512],
+		},
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -213,12 +218,17 @@ void test_audio_out_init_for_bad_params(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = I2S_AUDIOFREQ_96K,
-		.write_callback  = NULL,
-		.m0_buffer       = NULL,
-		.m1_buffer       = NULL,
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = I2S_AUDIOFREQ_96K,
+		},
+
+		.cb_params = {
+			.write_callback  = NULL,
+			.m0_buffer       = NULL,
+			.m1_buffer       = NULL,
+		},
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -235,12 +245,17 @@ void test_audio_out_init_for_i2s_busy_state_error(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = I2S_AUDIOFREQ_96K,
-		.write_callback  = audio_callback,
-		.m0_buffer       = &audio_buffer[0],
-		.m1_buffer       = &audio_buffer[512],
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = I2S_AUDIOFREQ_96K,
+		},
+
+		.cb_params = {
+			.write_callback  = audio_callback,
+			.m0_buffer       = &audio_buffer[0],
+			.m1_buffer       = &audio_buffer[512],
+		},
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -257,12 +272,17 @@ void test_audio_out_init_for_i2s_init_error(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = I2S_AUDIOFREQ_96K,
-		.write_callback  = audio_callback,
-		.m0_buffer       = &audio_buffer[0],
-		.m1_buffer       = &audio_buffer[512],
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = I2S_AUDIOFREQ_96K,
+		},
+
+		.cb_params = {
+			.write_callback  = audio_callback,
+			.m0_buffer       = &audio_buffer[0],
+			.m1_buffer       = &audio_buffer[512],
+		},
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -432,12 +452,17 @@ void test_i2sx_mspinit_for_ok(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = I2S_AUDIOFREQ_96K,
-		.write_callback  = audio_callback,
-		.m0_buffer       = &audio_buffer[0],
-		.m1_buffer       = &audio_buffer[512],
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = I2S_AUDIOFREQ_96K,
+		},
+
+		.cb_params = {
+			.write_callback  = audio_callback,
+			.m0_buffer       = &audio_buffer[0],
+			.m1_buffer       = &audio_buffer[512],
+		},
 	};
 
 	audio_out_set_params(&haout);
@@ -469,12 +494,17 @@ void test_i2sx_mspinit_for_error(void)
 	audio_io_error_reset();
 
 	audio_out_t haout = {
-		.standard        = I2S_STANDARD_PHILIPS,
-		.data_format     = I2S_DATAFORMAT_16B,
-		.audio_frequency = 0,
-		.write_callback  = audio_callback,
-		.m0_buffer       = &audio_buffer[0],
-		.m1_buffer       = &audio_buffer[512],
+		.hw_params = {
+			.standard        = I2S_STANDARD_PHILIPS,
+			.data_format     = I2S_DATAFORMAT_16B,
+			.audio_frequency = 0,
+		},
+
+		.cb_params = {
+			.write_callback  = audio_callback,
+			.m0_buffer       = &audio_buffer[0],
+			.m1_buffer       = &audio_buffer[512],
+		},
 	};
 
 	audio_out_set_params(&haout);
@@ -548,6 +578,17 @@ void test_i2sx_mspdeinit_for_error(void)
 
 	TEST_ASSERT_EQUAL(expected_i2c_error, actual_i2c_error);
 	TEST_ASSERT_GREATER_THAN(expected_i2s_error, actual_i2s_error);
+}
+
+void test_defines(void)
+{
+	TEST_ASSERT_EQUAL(I2S_STANDARD_PHILIPS,   AUDIO_OUT_STANDARD_PHILIPS);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_MSB,       AUDIO_OUT_STANDARD_LEFT_JUSTIFIED);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_LSB,       AUDIO_OUT_STANDARD_RIGHT_JUSTIFIED);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_PCM_SHORT, AUDIO_OUT_STANDARD_DSP_MODE);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_16B,     AUDIO_OUT_DATAFORMAT_16B);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_24B,     AUDIO_OUT_DATAFORMAT_24B);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_32B,     AUDIO_OUT_DATAFORMAT_32B);
 }
 
 #endif // TEST

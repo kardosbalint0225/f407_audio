@@ -19,15 +19,10 @@
 #define I2Cx_SDA_GPIO_PORT          			GPIOB
 #define I2Cx_SCL_PIN                    		GPIO_PIN_6
 #define I2Cx_SDA_PIN                    		GPIO_PIN_9
-#define I2Cx_CLK_SPEED                          100000	/* I2C clock speed configuration (in Hz) */
+#define I2Cx_CLK_SPEED                          100000U	/* I2C clock speed configuration (in Hz) */
 
 #define __I2Cx_FORCE_RESET()              		__HAL_RCC_I2C1_FORCE_RESET()
 #define __I2Cx_RELEASE_RESET()            		__HAL_RCC_I2C1_RELEASE_RESET()
-
-#define AUDIO_IO_RESET_PORT						GPIOD
-#define AUDIO_IO_RESET_PIN						GPIO_PIN_4
-#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	__HAL_RCC_GPIOD_CLK_ENABLE()
-#define __AUDIO_IO_RESET_GPIO_CLK_DISABLE()  	__HAL_RCC_GPIOD_CLK_DISABLE()
 
 #define I2CxTX_DMA_STREAM						DMA1_Stream7	//DMA1_Stream6
 #define I2CxTX_DMA_CHANNEL						DMA_CHANNEL_1
@@ -41,6 +36,17 @@
 #define __I2CxRX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
 #define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
 
+/**< ****************************************************************************************************************************** */
+/**< GPIO configuration defines (reset pin of the audio codec)																		*/
+/**< ****************************************************************************************************************************** */
+#define AUDIO_IO_RESET_PORT						GPIOD
+#define AUDIO_IO_RESET_PIN						GPIO_PIN_4
+#define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	__HAL_RCC_GPIOD_CLK_ENABLE()
+#define __AUDIO_IO_RESET_GPIO_CLK_DISABLE()  	__HAL_RCC_GPIOD_CLK_DISABLE()
+
+/**< ****************************************************************************************************************************** */
+/**< I2S peripheral configuration defines (stream interface of the audio codec)														*/
+/**< ****************************************************************************************************************************** */
 #define I2Sx									SPI3
 #define __I2Sx_CLK_ENABLE()               		__HAL_RCC_SPI3_CLK_ENABLE()		
 #define __I2Sx_CLK_DISABLE()					__HAL_RCC_SPI3_CLK_DISABLE()
@@ -72,6 +78,13 @@
 #define __I2SxTX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
 #define I2SxTX_DMA_Stream_IRQn					DMA1_Stream5_IRQn
 
+#define	AUDIO_OUT_STANDARD_PHILIPS          	(0x00000000U)
+#define AUDIO_OUT_STANDARD_LEFT_JUSTIFIED   	(0x00000010U)
+#define AUDIO_OUT_STANDARD_RIGHT_JUSTIFIED  	(0x00000020U)
+#define AUDIO_OUT_STANDARD_DSP_MODE         	(0x00000030U)
+#define	AUDIO_OUT_DATAFORMAT_16B            	(0x00000000U)
+#define	AUDIO_OUT_DATAFORMAT_24B            	(0x00000003U)
+#define	AUDIO_OUT_DATAFORMAT_32B            	(0x00000005U)
 
 typedef enum {
 	AUDIO_IO_OK = 0,
@@ -147,24 +160,33 @@ typedef void (*audio_out_write_callback_t)(uint16_t *address, const audio_out_cb
  *                  - I2S_DATAFORMAT_24B			(32 bit)
  *                  - I2S_DATAFORMAT_32B			(32 bit)
  * 
- * audio_frequency: - I2S_AUDIOFREQ_192K
- *                  - I2S_AUDIOFREQ_96K
- *                  - I2S_AUDIOFREQ_48K
- *                  - I2S_AUDIOFREQ_44K
- *                  - I2S_AUDIOFREQ_32K
- *                  - I2S_AUDIOFREQ_22K
- *                  - I2S_AUDIOFREQ_16K
- *                  - I2S_AUDIOFREQ_11K
- *                  - I2S_AUDIOFREQ_8K
- *                  - I2S_AUDIOFREQ_DEFAULT
+ * audio_frequency: - I2S_AUDIOFREQ_192K			(192000U)
+ *                  - I2S_AUDIOFREQ_96K				(96000U)
+ *                  - I2S_AUDIOFREQ_48K				(48000U)
+ *                  - I2S_AUDIOFREQ_44K				(44100U)
+ *                  - I2S_AUDIOFREQ_32K				(32000U)
+ *                  - I2S_AUDIOFREQ_22K				(22050U)
+ *                  - I2S_AUDIOFREQ_16K				(16000U)
+ *                  - I2S_AUDIOFREQ_11K				(11025U)
+ *                  - I2S_AUDIOFREQ_8K				(8000U)
+ *                  - I2S_AUDIOFREQ_DEFAULT			(2U)
  */
+
 typedef struct {
 	uint32_t standard;
 	uint32_t data_format;
 	uint32_t audio_frequency;
+} audio_out_hw_params_t;
+
+typedef struct {
 	audio_out_write_callback_t write_callback;
 	uint16_t *m0_buffer;
 	uint16_t *m1_buffer;
+} audio_out_cb_params_t;
+
+typedef struct {
+	audio_out_hw_params_t hw_params;
+	audio_out_cb_params_t cb_params;
 } audio_out_t;
 
 
@@ -173,6 +195,22 @@ void audio_io_error_reset(void);
 void audio_io_get_error(uint32_t *i2c, uint32_t *i2s);
 void audio_out_set_params(audio_out_t *haout);
 #endif
+
+typedef struct {
+	audio_status_t (*init)(void);
+	audio_status_t (*deinit)(void);
+	audio_status_t (*read)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+	audio_status_t (*write)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+} audio_io_if_t;
+
+typedef struct {
+	audio_status_t (*init)(audio_out_t *haout);
+	audio_status_t (*deinit)(void);
+	audio_status_t (*write)(uint16_t *data, const uint16_t size);
+	audio_status_t (*pause)(void);
+	audio_status_t (*resume)(void);
+	audio_status_t (*stop)(void);
+} audio_out_if_t;
 
 
 /**< ****************************************************************************************************************************** */

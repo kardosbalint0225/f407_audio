@@ -1,0 +1,20 @@
+CS43L22 datasheet:
+https://statics.cirrus.com/pubs/proDatasheet/CS43L22_F2.pdf
+
+STM32 microcontroller debug toolbox (AN4989):
+https://www.st.com/content/ccc/resource/technical/document/application_note/group0/3d/a5/0e/30/76/51/45/58/DM00354244/files/DM00354244.pdf/jcr:content/translations/en.DM00354244.pdf
+
+Description of STM32F4 HAL and low-layer drivers (UM1725):
+https://www.st.com/content/ccc/resource/technical/document/user_manual/2f/71/ba/b8/75/54/47/cf/DM00105879.pdf/files/DM00105879.pdf/jcr:content/translations/en.DM00105879.pdf
+
+STM32F405/415, STM32F407/417, STM32F427/437 and STM32F429/439 advanced Arm-based 32-bit MCUs (RM0090):
+https://www.st.com/content/ccc/resource/technical/document/reference_manual/3d/6d/5a/66/b4/99/40/d4/DM00031020.pdf/files/DM00031020.pdf/jcr:content/translations/en.DM00031020.pdf
+
+STM32F405xx STM32F407xx:
+https://www.st.com/content/ccc/resource/technical/document/datasheet/ef/92/76/6d/bb/c2/4f/f7/DM00037051.pdf/files/DM00037051.pdf/jcr:content/translations/en.DM00037051.pdf
+
+Discovery kit with STM32F407VG MCU (UM1472):
+https://www.st.com/resource/en/user_manual/um1472-discovery-kit-with-stm32f407vg-mcu-stmicroelectronics.pdf
+
+STM32F4DISCOVERY MB997-F407VGT6-D01 Board Schematic:
+https://www.st.com/resource/en/schematic_pack/mb997-f407vgt6-d01_schematic.pdf
