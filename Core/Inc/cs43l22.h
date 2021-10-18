@@ -546,19 +546,13 @@ typedef enum {
 	CS43L22_IO_WRITE_ERROR,
 } cs43l22_status_t;
 
-typedef struct {
-	audio_out_write_callback_t callback;
-	uint16_t *m0;
-	uint16_t *m1;
-} cs43l22_handle_t;
-
 #ifdef TEST
 void cs43l22_error_reset(void);
 void cs43l22_get_error(uint32_t *io, uint32_t *out);
 #endif
 
-cs43l22_status_t cs43l22_init(cs43l22_if_t *interface, cs43l22_handle_t *handle);
+cs43l22_status_t cs43l22_init(cs43l22_if_t *interface);
 cs43l22_status_t cs43l22_deinit(void);
-cs43l22_status_t cs43l22_set_hw_params(audio_out_t *haout);
+cs43l22_status_t cs43l22_set_hw_params(audio_out_ll_hw_params_t *haout);
 
 #endif // CS43L22_H

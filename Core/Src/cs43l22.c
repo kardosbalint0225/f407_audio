@@ -18,12 +18,6 @@ static audio_out_if_t cs43l22_out = {
     .stop   = NULL,
 };
 
-static cs43l22_handle_t cs43l22_handle = {
-    .callback = NULL,
-    .m0       = NULL,
-    .m1       = NULL,
-};
-
 static const uint8_t cs43l22_default_register_values[52] = {
     CS43L22_ID_DEFAULT,
     POWER_CONTROL_1_DEFAULT,
@@ -1108,7 +1102,7 @@ static cs43l22_status_t charge_pump_frequency(charge_pump_freq_reg_t *charge_pum
 
 
 
-cs43l22_status_t cs43l22_init(cs43l22_if_t *interface, cs43l22_handle_t *handle)
+cs43l22_status_t cs43l22_init(cs43l22_if_t *interface)
 {
     audio_status_t status;
     cs43l22_error.io.w  = 0;
@@ -1137,19 +1131,19 @@ cs43l22_status_t cs43l22_init(cs43l22_if_t *interface, cs43l22_handle_t *handle)
         cs43l22_error.io.init = 1;
     }
 
-    uint8_t cs43l22_register_value[52];
+    uint8_t cs43l22_register_values[52];
     cs43l22_map_t map = {
         .address = CS43L22_ID,
         .INCR    = 1,
     };
 
-    if (AUDIO_IO_OK != cs43l22_io.read(map.byte, cs43l22_register_value, 52, true)) {
+    if (AUDIO_IO_OK != cs43l22_io.read(map.byte, cs43l22_register_values, sizeof(cs43l22_register_values)/sizeof(uint8_t), true)) {
         cs43l22_error.io.read = 1;
     }
 
 }
 
-cs43l22_status_t cs43l22_set_hw_params(audio_out_t *haout)
+cs43l22_status_t cs43l22_set_hw_params(audio_out_ll_hw_params_t *haout)
 {
     
 }
@@ -1169,21 +1163,13 @@ const int8_t beep_generator_volume[32] = {
 
 cs43l22_status_t beep_generator_init(beep_generator_t *beep)
 {
-    audio_out_t haout = {
-        .hw_params = {
-            .standard        = AUDIO_OUT_STANDARD_LEFT_JUSTIFIED,
-            .data_format     = AUDIO_OUT_DATAFORMAT_16B,
-            .audio_frequency = 48000,
-        },
-        
-        .cb_params = {
-            .write_callback  = cs43l22_handle.callback,
-            .m0_buffer       = cs43l22_handle.m0,
-            .m1_buffer       = cs43l22_handle.m1,
-        },
+    audio_out_ll_hw_params_t hw_params = {
+        .standard        = AUDIO_OUT_STANDARD_LEFT_JUSTIFIED,
+        .data_format     = AUDIO_OUT_DATAFORMAT_16B,
+        .audio_frequency = 48000,
     };
 
-    audio_status_t status = audio_out_init(&haout);
+    audio_status_t status = audio_out_init(&hw_params);
 }
 
 cs43l22_status_t beep_generator_deinit(void)

@@ -176,24 +176,24 @@ typedef struct {
 	uint32_t standard;
 	uint32_t data_format;
 	uint32_t audio_frequency;
-} audio_out_hw_params_t;
+} audio_out_ll_hw_params_t;
 
 typedef struct {
 	audio_out_write_callback_t write_callback;
 	uint16_t *m0_buffer;
 	uint16_t *m1_buffer;
-} audio_out_cb_params_t;
+} audio_out_ll_cb_params_t;
 
 typedef struct {
-	audio_out_hw_params_t hw_params;
-	audio_out_cb_params_t cb_params;
-} audio_out_t;
+	audio_out_ll_hw_params_t hw_params;
+	audio_out_ll_cb_params_t cb_params;
+} audio_out_ll_t;
 
 
 #ifdef TEST
 void audio_io_error_reset(void);
 void audio_io_get_error(uint32_t *i2c, uint32_t *i2s);
-void audio_out_set_params(audio_out_t *haout);
+void audio_out_ll_set_params(audio_out_ll_t *haout);
 #endif
 
 typedef struct {
@@ -204,7 +204,7 @@ typedef struct {
 } audio_io_if_t;
 
 typedef struct {
-	audio_status_t (*init)(audio_out_t *haout);
+	audio_status_t (*init)(audio_out_ll_hw_params_t *haout);
 	audio_status_t (*deinit)(void);
 	audio_status_t (*write)(uint16_t *data, const uint16_t size);
 	audio_status_t (*pause)(void);
@@ -224,12 +224,13 @@ audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t s
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Stream functions            																						*/
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_init(audio_out_t *haout);
+audio_status_t audio_out_init(audio_out_ll_hw_params_t *haout);
 audio_status_t audio_out_deinit(void);
 audio_status_t audio_out_write(uint16_t *data, const uint16_t size);
 audio_status_t audio_out_pause(void);
 audio_status_t audio_out_resume(void);
 audio_status_t audio_out_stop(void);
+bool           audio_out_ll_set_cb_params(audio_out_ll_cb_params_t *cb_params);
 
 
 #endif // AUDIO_IO_H

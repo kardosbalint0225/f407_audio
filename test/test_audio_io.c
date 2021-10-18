@@ -190,18 +190,10 @@ void test_audio_out_init_for_ok(void)
 {
 	audio_io_error_reset();
 
-	audio_out_t haout = {
-		.hw_params = {
-			.standard        = I2S_STANDARD_PHILIPS,
-			.data_format     = I2S_DATAFORMAT_16B,
-			.audio_frequency = I2S_AUDIOFREQ_96K,
-		},
-		
-		.cb_params = {
-			.write_callback  = audio_callback,
-			.m0_buffer       = &audio_buffer[0],
-			.m1_buffer       = &audio_buffer[512],
-		},
+	audio_out_ll_hw_params_t haout = {
+		.standard        = I2S_STANDARD_PHILIPS,
+		.data_format     = I2S_DATAFORMAT_16B,
+		.audio_frequency = I2S_AUDIOFREQ_96K,
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -213,49 +205,14 @@ void test_audio_out_init_for_ok(void)
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
-void test_audio_out_init_for_bad_params(void)
-{
-	audio_io_error_reset();
-
-	audio_out_t haout = {
-		.hw_params = {
-			.standard        = I2S_STANDARD_PHILIPS,
-			.data_format     = I2S_DATAFORMAT_16B,
-			.audio_frequency = I2S_AUDIOFREQ_96K,
-		},
-
-		.cb_params = {
-			.write_callback  = NULL,
-			.m0_buffer       = NULL,
-			.m1_buffer       = NULL,
-		},
-	};
-
-	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
-	HAL_I2S_GetState_ExpectAnyArgsAndReturn(HAL_I2S_STATE_RESET);
-	HAL_I2S_Init_ExpectAnyArgsAndReturn(HAL_OK);
-	
-	audio_status_t actual = audio_out_init(&haout);
-	audio_status_t expected = AUDIO_OUT_INIT_ERROR;
-	TEST_ASSERT_EQUAL((int)expected, (int)actual);
-}
-
 void test_audio_out_init_for_i2s_busy_state_error(void)
 {
 	audio_io_error_reset();
 
-	audio_out_t haout = {
-		.hw_params = {
-			.standard        = I2S_STANDARD_PHILIPS,
-			.data_format     = I2S_DATAFORMAT_16B,
-			.audio_frequency = I2S_AUDIOFREQ_96K,
-		},
-
-		.cb_params = {
-			.write_callback  = audio_callback,
-			.m0_buffer       = &audio_buffer[0],
-			.m1_buffer       = &audio_buffer[512],
-		},
+	audio_out_ll_hw_params_t haout = {
+		.standard        = I2S_STANDARD_PHILIPS,
+		.data_format     = I2S_DATAFORMAT_16B,
+		.audio_frequency = I2S_AUDIOFREQ_96K,
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -271,18 +228,10 @@ void test_audio_out_init_for_i2s_init_error(void)
 {
 	audio_io_error_reset();
 
-	audio_out_t haout = {
-		.hw_params = {
-			.standard        = I2S_STANDARD_PHILIPS,
-			.data_format     = I2S_DATAFORMAT_16B,
-			.audio_frequency = I2S_AUDIOFREQ_96K,
-		},
-
-		.cb_params = {
-			.write_callback  = audio_callback,
-			.m0_buffer       = &audio_buffer[0],
-			.m1_buffer       = &audio_buffer[512],
-		},
+	audio_out_ll_hw_params_t haout = {
+		.standard        = I2S_STANDARD_PHILIPS,
+		.data_format     = I2S_DATAFORMAT_16B,
+		.audio_frequency = I2S_AUDIOFREQ_96K,
 	};
 
 	HAL_I2S_RegisterCallback_IgnoreAndReturn(HAL_OK);
@@ -451,7 +400,7 @@ void test_i2sx_mspinit_for_ok(void)
 	I2S_HandleTypeDef hi2s;
 	audio_io_error_reset();
 
-	audio_out_t haout = {
+	audio_out_ll_t haout = {
 		.hw_params = {
 			.standard        = I2S_STANDARD_PHILIPS,
 			.data_format     = I2S_DATAFORMAT_16B,
@@ -465,7 +414,7 @@ void test_i2sx_mspinit_for_ok(void)
 		},
 	};
 
-	audio_out_set_params(&haout);
+	audio_out_ll_set_params(&haout);
 
 	HAL_RCCEx_EnablePLLI2S_ExpectAnyArgsAndReturn(HAL_OK);
 	HAL_GPIO_Init_ExpectAnyArgs();
@@ -493,7 +442,7 @@ void test_i2sx_mspinit_for_error(void)
 	I2S_HandleTypeDef hi2s;
 	audio_io_error_reset();
 
-	audio_out_t haout = {
+	audio_out_ll_t haout = {
 		.hw_params = {
 			.standard        = I2S_STANDARD_PHILIPS,
 			.data_format     = I2S_DATAFORMAT_16B,
@@ -507,7 +456,7 @@ void test_i2sx_mspinit_for_error(void)
 		},
 	};
 
-	audio_out_set_params(&haout);
+	audio_out_ll_set_params(&haout);
 
 	HAL_RCCEx_EnablePLLI2S_ExpectAnyArgsAndReturn(HAL_OK);
 	HAL_GPIO_Init_ExpectAnyArgs();

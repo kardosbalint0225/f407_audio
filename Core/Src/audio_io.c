@@ -26,7 +26,7 @@ DMA_HandleTypeDef hdma_i2c_tx;
 DMA_HandleTypeDef hdma_i2c_rx;
 DMA_HandleTypeDef hdma_i2s_tx;
 
-static audio_out_t audio_out = {
+static audio_out_ll_t audio_out_ll = {
 	.hw_params = {
 		.standard        = 0,
 		.data_format     = 0,
@@ -43,7 +43,7 @@ static audio_io_err_t audio_io_error;
 
 static HAL_StatusTypeDef I2Cx_Init(void);
 static HAL_StatusTypeDef I2Cx_DeInit(void);
-static HAL_StatusTypeDef I2Sx_Init(audio_out_t *haout);
+static HAL_StatusTypeDef I2Sx_Init(audio_out_ll_hw_params_t *haout);
 static HAL_StatusTypeDef I2Sx_DeInit(void);
 
 static void I2Cx_ErrorHandler(void);
@@ -80,14 +80,14 @@ void audio_io_get_error(uint32_t *i2c, uint32_t *i2s)
 	*i2s = audio_io_error.i2s.w;
 }
 
-void audio_out_set_params(audio_out_t *haout)
+void audio_out_ll_set_params(audio_out_ll_t *haout)
 {
-	audio_out.hw_params.standard        = haout->hw_params.standard;
-	audio_out.hw_params.data_format     = haout->hw_params.data_format;
-	audio_out.hw_params.audio_frequency = haout->hw_params.audio_frequency;
-	audio_out.cb_params.write_callback  = haout->cb_params.write_callback;
-	audio_out.cb_params.m0_buffer		= haout->cb_params.m0_buffer;
-	audio_out.cb_params.m1_buffer       = haout->cb_params.m1_buffer;
+	audio_out_ll.hw_params.standard        = haout->hw_params.standard;
+	audio_out_ll.hw_params.data_format     = haout->hw_params.data_format;
+	audio_out_ll.hw_params.audio_frequency = haout->hw_params.audio_frequency;
+	audio_out_ll.cb_params.write_callback  = haout->cb_params.write_callback;
+	audio_out_ll.cb_params.m0_buffer		= haout->cb_params.m0_buffer;
+	audio_out_ll.cb_params.m1_buffer       = haout->cb_params.m1_buffer;
 }
 #endif
 
@@ -408,7 +408,7 @@ audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t s
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Stream initialization 																						    */
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_init(audio_out_t *haout)
+audio_status_t audio_out_init(audio_out_ll_hw_params_t *haout)
 {
 	HAL_StatusTypeDef status;
 	audio_status_t retc;
@@ -432,28 +432,18 @@ uint32_t find(const uint32_t *array, const uint32_t size, const uint32_t value)
 	return index;
 }
 
-static HAL_StatusTypeDef I2Sx_Init(audio_out_t *haout)
+static HAL_StatusTypeDef I2Sx_Init(audio_out_ll_hw_params_t *haout)
 {
 	HAL_StatusTypeDef status;
 	audio_io_error.i2s.w = 0;
 
-	if ((NULL == haout)                           || \
-	    (NULL == haout->cb_params.write_callback) || \
-		(NULL == haout->cb_params.m0_buffer)      || \
-		(NULL == haout->cb_params.m1_buffer)) 	  {
-		audio_io_error.i2s.bad_params = 1;
-	}
+	audio_out_ll.hw_params.standard        = haout->standard;
+	audio_out_ll.hw_params.data_format     = haout->data_format;
+	audio_out_ll.hw_params.audio_frequency = haout->audio_frequency;
 
-	audio_out.hw_params.standard        = haout->hw_params.standard;
-	audio_out.hw_params.data_format     = haout->hw_params.data_format;
-	audio_out.hw_params.audio_frequency = haout->hw_params.audio_frequency;
-	audio_out.cb_params.write_callback  = haout->cb_params.write_callback;
-	audio_out.cb_params.m0_buffer		= haout->cb_params.m0_buffer;
-	audio_out.cb_params.m1_buffer       = haout->cb_params.m1_buffer;
-
-	hi2s.Init.Standard       = audio_out.hw_params.standard;
-	hi2s.Init.DataFormat     = audio_out.hw_params.data_format;
-	hi2s.Init.AudioFreq      = audio_out.hw_params.audio_frequency;
+	hi2s.Init.Standard       = audio_out_ll.hw_params.standard;
+	hi2s.Init.DataFormat     = audio_out_ll.hw_params.data_format;
+	hi2s.Init.AudioFreq      = audio_out_ll.hw_params.audio_frequency;
 	hi2s.Instance            = I2Sx;
 	hi2s.Init.Mode           = I2S_MODE_MASTER_TX;
 	hi2s.Init.MCLKOutput     = I2S_MCLKOUTPUT_ENABLE;
@@ -487,11 +477,11 @@ void I2Sx_MspInit(I2S_HandleTypeDef *hi2s)
 	GPIO_InitTypeDef GPIO_InitStruct;
 	HAL_StatusTypeDef status;
 
-	uint32_t index = find(I2Sx_Fs, sizeof(I2Sx_Fs)/sizeof(uint32_t), audio_out.hw_params.audio_frequency);
+	uint32_t index = find(I2Sx_Fs, sizeof(I2Sx_Fs)/sizeof(uint32_t), audio_out_ll.hw_params.audio_frequency);
 
 	if (0xFFFFFFFF == index) {
 		audio_io_error.i2s.invalid_fs = 1;
-		audio_out.hw_params.audio_frequency = I2Sx_Fs[0];
+		audio_out_ll.hw_params.audio_frequency = I2Sx_Fs[0];
 		index = 0;
 	}
 
@@ -544,8 +534,8 @@ void I2Sx_MspInit(I2S_HandleTypeDef *hi2s)
 	hdma_i2s_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
 	hdma_i2s_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
 	hdma_i2s_tx.Init.MemInc              = DMA_MINC_ENABLE;
-	hdma_i2s_tx.Init.PeriphDataAlignment = (I2S_DATAFORMAT_16B == audio_out.hw_params.data_format) ? (DMA_PDATAALIGN_HALFWORD) : (DMA_PDATAALIGN_WORD);
-	hdma_i2s_tx.Init.MemDataAlignment    = (I2S_DATAFORMAT_16B == audio_out.hw_params.data_format) ? (DMA_MDATAALIGN_HALFWORD) : (DMA_MDATAALIGN_WORD);
+	hdma_i2s_tx.Init.PeriphDataAlignment = (I2S_DATAFORMAT_16B == audio_out_ll.hw_params.data_format) ? (DMA_PDATAALIGN_HALFWORD) : (DMA_PDATAALIGN_WORD);
+	hdma_i2s_tx.Init.MemDataAlignment    = (I2S_DATAFORMAT_16B == audio_out_ll.hw_params.data_format) ? (DMA_MDATAALIGN_HALFWORD) : (DMA_MDATAALIGN_WORD);
 	hdma_i2s_tx.Init.Mode                = DMA_NORMAL; 
 	hdma_i2s_tx.Init.Priority            = DMA_PRIORITY_HIGH;
 	hdma_i2s_tx.Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
@@ -623,12 +613,12 @@ void I2Sx_MspDeInit(I2S_HandleTypeDef *hi2s)
 /**< ****************************************************************************************************************************** */
 void I2Sx_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	audio_out.cb_params.write_callback(audio_out.cb_params.m0_buffer, AUDIO_OUT_TX_HALF_COMPLETE_CB_ID);
+	audio_out_ll.cb_params.write_callback(audio_out_ll.cb_params.m0_buffer, AUDIO_OUT_TX_HALF_COMPLETE_CB_ID);
 }
 
 void I2Sx_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	audio_out.cb_params.write_callback(audio_out.cb_params.m1_buffer, AUDIO_OUT_TX_COMPLETE_CB_ID);
+	audio_out_ll.cb_params.write_callback(audio_out_ll.cb_params.m1_buffer, AUDIO_OUT_TX_COMPLETE_CB_ID);
 }
 
 void I2Sx_ErrorCallback(I2S_HandleTypeDef *hi2s)
@@ -683,4 +673,28 @@ audio_status_t audio_out_stop(void)
 	return retc;
 }
 
+bool audio_out_ll_set_cb_params(audio_out_ll_cb_params_t *cb_params)
+{
+	bool retc;
+
+	if ((NULL != cb_params)                 && \
+	    (NULL != cb_params->write_callback) && \
+		(NULL != cb_params->m0_buffer)      && \
+		(NULL != cb_params->m1_buffer)) 	{
+
+		audio_out_ll.cb_params.write_callback = cb_params->write_callback;
+		audio_out_ll.cb_params.m0_buffer      = cb_params->m0_buffer;
+		audio_out_ll.cb_params.m1_buffer      = cb_params->m1_buffer;
+		retc = true;	
+		
+	} else {
+		audio_out_ll.cb_params.write_callback = NULL;
+		audio_out_ll.cb_params.m0_buffer      = NULL;
+		audio_out_ll.cb_params.m1_buffer      = NULL;
+		audio_io_error.i2s.bad_params = 1;
+		retc = false;
+	}
+
+	return retc;
+}
 
