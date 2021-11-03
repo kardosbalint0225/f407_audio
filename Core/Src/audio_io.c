@@ -50,9 +50,9 @@ static void I2Cx_ErrorHandler(void);
 static void I2Sx_ErrorHandler(void);
 static void DMA_Init(void);
 static void DMA_DeInit(void);
-static void audio_io_reset(void);
-static void audio_io_reset_pin_init(void);
-static void audio_io_reset_pin_deinit(void);
+
+static bool is_hw_params_valid(audio_out_ll_hw_params_t *hw_params);
+static bool is_cb_params_valid(audio_out_ll_cb_params_t *cb_params);
 
 void I2Cx_MspInit(I2C_HandleTypeDef *hi2c);
 void I2Cx_MspDeInit(I2C_HandleTypeDef *hi2c);
@@ -80,14 +80,11 @@ void audio_io_get_error(uint32_t *i2c, uint32_t *i2s)
 	*i2s = audio_io_error.i2s.w;
 }
 
-void audio_out_ll_set_params(audio_out_ll_t *haout)
+void audio_out_ll_set_hw_params(audio_out_ll_hw_params_t *hw_params)
 {
-	audio_out_ll.hw_params.standard        = haout->hw_params.standard;
-	audio_out_ll.hw_params.data_format     = haout->hw_params.data_format;
-	audio_out_ll.hw_params.audio_frequency = haout->hw_params.audio_frequency;
-	audio_out_ll.cb_params.write_callback  = haout->cb_params.write_callback;
-	audio_out_ll.cb_params.m0_buffer		= haout->cb_params.m0_buffer;
-	audio_out_ll.cb_params.m1_buffer       = haout->cb_params.m1_buffer;
+	audio_out_ll.hw_params.standard        = hw_params->standard;
+	audio_out_ll.hw_params.data_format     = hw_params->data_format;
+	audio_out_ll.hw_params.audio_frequency = hw_params->audio_frequency;
 }
 #endif
 
@@ -121,21 +118,15 @@ static void DMA_DeInit(void)
 /**< ****************************************************************************************************************************** */
 audio_status_t audio_io_init(void)
 {	
-	HAL_StatusTypeDef status;
-	audio_status_t retc;
-
-	audio_io_reset_pin_init();
-	audio_io_reset();
-	
 	DMA_Init();
 	
-	status = I2Cx_Init();
-	retc = (HAL_OK != status) ? (AUDIO_IO_INIT_ERROR) : (AUDIO_IO_OK);
+	HAL_StatusTypeDef status = I2Cx_Init();
+	audio_status_t retc      = (HAL_OK != status) ? (AUDIO_IO_INIT_ERROR) : (AUDIO_IO_OK);
 	
 	return retc;
 }
 
-static void audio_io_reset_pin_init(void)
+void audio_io_reset_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 	
@@ -146,13 +137,16 @@ static void audio_io_reset_pin_init(void)
 	GPIO_InitStruct.Pull  = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;		
 	HAL_GPIO_Init(AUDIO_IO_RESET_PORT, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_RESET);
 }
 
-static void audio_io_reset(void)
+void audio_io_reset(audio_io_reset_state_t state)
 {	
-	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_RESET);		/* Power Down the codec */
-	HAL_Delay(5); 																	/* Wait for a delay to ensure registers erasing */
-	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_SET);		/* Power on the codec */
+	//HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_RESET);		/* Power Down the codec */
+	//HAL_Delay(5); 																	/* Wait for a delay to ensure registers erasing */
+	//HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, GPIO_PIN_SET);		/* Power on the codec */
+	HAL_GPIO_WritePin(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN, (GPIO_PinState)state);
 }
 
 static HAL_StatusTypeDef I2Cx_Init(void)
@@ -277,21 +271,16 @@ void I2Cx_MspInit(I2C_HandleTypeDef *hi2c)
 /**< ****************************************************************************************************************************** */
 audio_status_t audio_io_deinit(void)
 {
-	HAL_StatusTypeDef status;
-	audio_status_t retc;
-
-	audio_io_reset_pin_deinit();
-	
-	status = I2Cx_DeInit();
+	HAL_StatusTypeDef status = I2Cx_DeInit();
 	
 	DMA_DeInit();
 	
-	retc = (HAL_OK != status) ? (AUDIO_IO_DEINIT_ERROR) : (AUDIO_IO_OK);
+	audio_status_t retc = (HAL_OK != status) ? (AUDIO_IO_DEINIT_ERROR) : (AUDIO_IO_OK);
 
 	return retc;
 }
 
-static void audio_io_reset_pin_deinit(void)
+void audio_io_reset_deinit(void)
 {
 	HAL_GPIO_DeInit(AUDIO_IO_RESET_PORT, AUDIO_IO_RESET_PIN);
 }
@@ -408,7 +397,7 @@ audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t s
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Stream initialization 																						    */
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_init(audio_out_ll_hw_params_t *haout)
+audio_status_t audio_out_ll_init(audio_out_ll_hw_params_t *haout)
 {
 	HAL_StatusTypeDef status;
 	audio_status_t retc;
@@ -437,9 +426,17 @@ static HAL_StatusTypeDef I2Sx_Init(audio_out_ll_hw_params_t *haout)
 	HAL_StatusTypeDef status;
 	audio_io_error.i2s.w = 0;
 
-	audio_out_ll.hw_params.standard        = haout->standard;
-	audio_out_ll.hw_params.data_format     = haout->data_format;
-	audio_out_ll.hw_params.audio_frequency = haout->audio_frequency;
+	if (true == is_hw_params_valid(haout)) {
+		audio_out_ll.hw_params.standard        = haout->standard;
+		audio_out_ll.hw_params.data_format     = haout->data_format;
+		audio_out_ll.hw_params.audio_frequency = haout->audio_frequency;
+	} else {
+		audio_out_ll.hw_params.standard        = AUDIO_OUT_STANDARD_LEFT_JUSTIFIED;	// default standard
+		audio_out_ll.hw_params.data_format     = AUDIO_OUT_DATAFORMAT_16B;			// default data format
+		audio_out_ll.hw_params.audio_frequency = I2Sx_Fs[0];						// default sampling rate
+		audio_io_error.i2s.bad_params = 1;
+	}
+	
 
 	hi2s.Init.Standard       = audio_out_ll.hw_params.standard;
 	hi2s.Init.DataFormat     = audio_out_ll.hw_params.data_format;
@@ -558,7 +555,7 @@ void I2Sx_MspInit(I2S_HandleTypeDef *hi2s)
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Stream deinitialization 																						    */
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_deinit(void)
+audio_status_t audio_out_ll_deinit(void)
 {
 	HAL_StatusTypeDef status;
 	audio_status_t retc;
@@ -641,7 +638,7 @@ static void I2Sx_ErrorHandler(void)
 /**<    in the transaction and when a 24-bit data frame or a 32-bit data frame is selected											*/
 /**<    the Size parameter means the number of 16-bit data length.																	*/
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_write(uint16_t *data, const uint16_t size)
+audio_status_t audio_out_ll_write(uint16_t *data, const uint16_t size)
 {
 	HAL_StatusTypeDef status = HAL_I2S_Transmit_DMA(&hi2s, data, size);
 	audio_status_t retc = (HAL_OK != status) ? (AUDIO_OUT_WRITE_ERROR) : (AUDIO_IO_OK);	
@@ -649,7 +646,7 @@ audio_status_t audio_out_write(uint16_t *data, const uint16_t size)
 	return retc;
 }
 
-audio_status_t audio_out_pause(void)
+audio_status_t audio_out_ll_pause(void)
 {
 	HAL_StatusTypeDef status = HAL_I2S_DMAPause(&hi2s);
 	audio_status_t retc = (HAL_OK != status) ? (AUDIO_OUT_PAUSE_ERROR) : (AUDIO_IO_OK);
@@ -657,7 +654,7 @@ audio_status_t audio_out_pause(void)
 	return retc;
 }
 
-audio_status_t audio_out_resume(void)
+audio_status_t audio_out_ll_resume(void)
 {
 	HAL_StatusTypeDef status = HAL_I2S_DMAResume(&hi2s);
 	audio_status_t retc = (HAL_OK != status) ? (AUDIO_OUT_RESUME_ERROR) : (AUDIO_IO_OK);
@@ -665,10 +662,44 @@ audio_status_t audio_out_resume(void)
 	return retc;
 }
 
-audio_status_t audio_out_stop(void)
+audio_status_t audio_out_ll_stop(void)
 {
 	HAL_StatusTypeDef status = HAL_I2S_DMAStop(&hi2s);
 	audio_status_t retc = (HAL_OK != status) ? (AUDIO_OUT_STOP_ERROR) : (AUDIO_IO_OK);
+
+	return retc;
+}
+
+static bool is_hw_params_valid(audio_out_ll_hw_params_t *hw_params)
+{
+	bool retc;
+
+	if ((NULL == hw_params)                    || \
+		(NULL == &hw_params->standard)         || \
+		(NULL == &hw_params->data_format)      || \
+		(NULL == &hw_params->audio_frequency)) {
+
+		retc = false;
+	} else {
+		retc = true;
+	}
+
+	return retc;
+}
+
+static bool is_cb_params_valid(audio_out_ll_cb_params_t *cb_params)
+{
+	bool retc;
+
+	if ((NULL == cb_params)                 || \
+		(NULL == cb_params->write_callback) || \
+		(NULL == cb_params->m0_buffer)      || \
+		(NULL == cb_params->m1_buffer))     {
+
+		retc = false;
+	} else {
+		retc = true;
+	}
 
 	return retc;
 }
@@ -677,21 +708,16 @@ bool audio_out_ll_set_cb_params(audio_out_ll_cb_params_t *cb_params)
 {
 	bool retc;
 
-	if ((NULL != cb_params)                 && \
-	    (NULL != cb_params->write_callback) && \
-		(NULL != cb_params->m0_buffer)      && \
-		(NULL != cb_params->m1_buffer)) 	{
-
+	if (true == is_cb_params_valid(cb_params)) {
 		audio_out_ll.cb_params.write_callback = cb_params->write_callback;
 		audio_out_ll.cb_params.m0_buffer      = cb_params->m0_buffer;
 		audio_out_ll.cb_params.m1_buffer      = cb_params->m1_buffer;
 		retc = true;	
-		
 	} else {
 		audio_out_ll.cb_params.write_callback = NULL;
 		audio_out_ll.cb_params.m0_buffer      = NULL;
 		audio_out_ll.cb_params.m1_buffer      = NULL;
-		audio_io_error.i2s.bad_params = 1;
+		audio_io_error.i2s.bad_params         = 1;
 		retc = false;
 	}
 
