@@ -1229,3 +1229,174 @@ static cs43l22_status_t charge_pump_frequency(charge_pump_freq_reg_t *charge_pum
 }
 
 
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**< ****************************************************************************************************** */
+/**< 4.2.1 Beep Generator																					*/
+/**< ****************************************************************************************************** */
+typedef struct {
+	uint8_t frequency;
+	uint8_t on_time;
+	uint8_t off_time;
+	uint8_t volume;			// 0..110 %, 3.44 % step size in percentages | 0 dB = 100 % .. -56 dB = 0 %, 6 dB = 110 %
+	uint8_t mix_disable;
+} beep_generator_t;
+
+/**< 4.2.1.1 frequency																						*/
+typedef enum {
+	BEEP_GENERATOR_FREQUENCY_C4_PITCH  = 0x00U,
+	BEEP_GENERATOR_FREQUENCY_C5_PITCH  = 0x10U,
+	BEEP_GENERATOR_FREQUENCY_D5_PITCH  = 0x20U,
+	BEEP_GENERATOR_FREQUENCY_E5_PITCH  = 0x30U,
+	BEEP_GENERATOR_FREQUENCY_F5_PITCH  = 0x40U,
+	BEEP_GENERATOR_FREQUENCY_G5_PITCH  = 0x50U,
+	BEEP_GENERATOR_FREQUENCY_A5_PITCH  = 0x60U,
+	BEEP_GENERATOR_FREQUENCY_B5_PITCH  = 0x70U,
+	BEEP_GENERATOR_FREQUENCY_C6_PITCH  = 0x80U,
+	BEEP_GENERATOR_FREQUENCY_D6_PITCH  = 0x90U,
+	BEEP_GENERATOR_FREQUENCY_E6_PITCH  = 0xA0U,
+	BEEP_GENERATOR_FREQUENCY_F6_PITCH  = 0xB0U,
+	BEEP_GENERATOR_FREQUENCY_G6_PITCH  = 0xC0U,
+	BEEP_GENERATOR_FREQUENCY_A6_PITCH  = 0xD0U,
+	BEEP_GENERATOR_FREQUENCY_B6_PITCH  = 0xE0U,
+	BEEP_GENERATOR_FREQUENCY_C7_PITCH  = 0xF0U,
+} beep_generator_frequency_t;
+
+/**< 4.2.1.2 on time																						*/
+typedef enum {
+	BEEP_GENERATOR_ON_TIME_86_MS       = 0x00U,
+	BEEP_GENERATOR_ON_TIME_430_MS      = 0x01U,
+	BEEP_GENERATOR_ON_TIME_780_MS      = 0x02U,
+	BEEP_GENERATOR_ON_TIME_1_20_S      = 0x03U,
+	BEEP_GENERATOR_ON_TIME_1_50_S      = 0x04U,
+	BEEP_GENERATOR_ON_TIME_1_80_S      = 0x05U,
+	BEEP_GENERATOR_ON_TIME_2_20_S      = 0x06U,
+	BEEP_GENERATOR_ON_TIME_2_50_S      = 0x07U,
+	BEEP_GENERATOR_ON_TIME_2_80_S      = 0x08U,
+	BEEP_GENERATOR_ON_TIME_3_20_S      = 0x09U,
+	BEEP_GENERATOR_ON_TIME_3_50_S      = 0x0AU,
+	BEEP_GENERATOR_ON_TIME_3_80_S      = 0x0BU,
+	BEEP_GENERATOR_ON_TIME_4_20_S      = 0x0CU,
+	BEEP_GENERATOR_ON_TIME_4_50_S      = 0x0DU,
+	BEEP_GENERATOR_ON_TIME_4_80_S      = 0x0EU,
+	BEEP_GENERATOR_ON_TIME_5_20_S      = 0x0FU,
+} beep_generator_on_time_t;
+
+/**< 4.2.1.3 off time																						*/
+typedef enum {
+	BEEP_GENERATOR_OFF_TIME_1_23_S     = 0x00U,
+	BEEP_GENERATOR_OFF_TIME_2_58_S     = 0x20U,
+	BEEP_GENERATOR_OFF_TIME_3_90_S     = 0x40U,
+	BEEP_GENERATOR_OFF_TIME_5_20_S     = 0x60U,
+	BEEP_GENERATOR_OFF_TIME_6_60_S     = 0x80U,
+	BEEP_GENERATOR_OFF_TIME_8_05_S     = 0xA0U,
+	BEEP_GENERATOR_OFF_TIME_9_35_S     = 0xC0U,
+	BEEP_GENERATOR_OFF_TIME_10_8_S     = 0xE0U,
+} beep_generator_off_time_t;
+
+/**< 4.2.1.4 volume																							*/
+typedef enum {
+	BEEP_GENERATOR_VOLUME_STEP_SIZE    = 2,
+	BEEP_GENERATOR_VOLUME_MIN          = -56,
+	BEEP_GENERATOR_VOLUME_MAX          = 6,
+} beep_generator_volume_t;
+
+/**< 4.2.1.5 occurence																						*/
+typedef enum {
+	BEEP_GENERATOR_OCCURENCE_OFF       = 0x00,
+	BEEP_GENERATOR_OCCURENCE_SINGLE    = 0x40,
+	BEEP_GENERATOR_OCCURENCE_MULTIPLE  = 0x80,
+	BEEP_GENERATOR_OCCURENCE_CONTINOUS = 0xC0,
+} beep_generator_occurence_t;
+
+/**< 4.2.1.6 mix disable																					*/
+typedef enum {
+	BEEP_GENERATOR_MIX_ENABLED         = 0x00,
+	BEEP_GENERATOR_MIX_DISABLED        = 0x20,
+} beep_generator_mix_disable_t;
+
+/**< ****************************************************************************************************** */
+
+
+/**< ****************************************************************************************************** */
+/**< 4.2.1 Beep Generator																					*/
+/**< ****************************************************************************************************** */
+static const int32_t beep_volume[32] = { 
+	 -6,  -4,  -2,   0,   2,   4,   6, -56, -54, -52, -50, 
+	-48, -46, -44, -42, -40, -38, -36, -34, -32, -30, -28, 
+	-26, -24, -22, -20, -18, -16, -14, -12, -10, -8 
+};
+
+cs43l22_status_t beep_generator_init(beep_generator_t *beep)
+{
+    uint8_t beep_generator_register_config[3];
+    uint8_t beep_volume_index;
+    uint8_t size = sizeof(beep_generator_register_config)/sizeof(uint8_t);
+    audio_status_t status; 
+
+    audio_out_ll_hw_params_t hw_params = {
+        .standard        = AUDIO_OUT_STANDARD_LEFT_JUSTIFIED,
+        .data_format     = AUDIO_OUT_DATAFORMAT_16B,
+        .audio_frequency = 48000,
+    };
+
+    cs43l22_map_t beep_map = {
+        .address = BEEP_FREQUENCY_ON_TIME,
+        .INCR    = 1,
+    };
+    
+    if (NULL == beep) {
+        cs43l22_error.out.bad_params = 1;
+    }
+    
+    if (AUDIO_IO_OK != cs43l22_out.init(&hw_params)) {
+        cs43l22_error.out.init = 1;
+    }
+    
+    if (AUDIO_IO_OK != cs43l22_io.read(beep_map.byte, beep_generator_register_config, size, true)) {
+        cs43l22_error.io.read = 1;
+    }
+
+    beep->volume = (beep->volume > 110) ? 110 : beep->volume;   // saturate to avoid invalid gain setting
+
+    int32_t volume = (int32_t)(0.29*((float)beep->volume));
+    volume = (-2)*(28 - volume);
+    
+    beep_volume_index = (uint8_t)sfind(beep_volume, sizeof(beep_volume)/sizeof(int32_t), volume);
+
+    beep_generator_register_config[0] = beep->frequency    | beep->on_time;
+    beep_generator_register_config[1] = beep->off_time     | beep_volume_index;
+    beep_generator_register_config[2] &= 0x1F;
+    beep_generator_register_config[2] |= beep->mix_disable | BEEP_GENERATOR_OCCURENCE_OFF;
+    
+    if (AUDIO_IO_OK != cs43l22_io.write(beep_map.byte, beep_generator_register_config, size, true)) {
+        cs43l22_error.io.write = 1;
+    }
+
+    cs43l22_status_t retc = ((0 != cs43l22_error.io.w) || (0 != cs43l22_error.out.w)) ? (CS43L22_BEEP_GENERATOR_INIT_ERROR) : (CS43L22_OK);
+
+    return retc;
+}
+
+uint32_t sfind(const int32_t *array, const uint32_t size, const int32_t value)
+{
+	uint32_t index = 0xFFFFFFFF;
+
+	for (uint32_t i = 0; i < size; i++) {
+		if (array[i] == value) {
+			index = i;
+		}
+	}
+
+	return index;
+}
+
+// beep_generator_start(occurence)
+// beep_generator_stop
+
+cs43l22_status_t beep_generator_deinit(void)
+{
+
+}

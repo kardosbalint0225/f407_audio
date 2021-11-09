@@ -12,7 +12,8 @@
 	#include "stm32f4xx_hal.h"
 #endif
 
-static const uint32_t PLLI2Sx_CLK   = 1000000U;
+
+//static const uint32_t PLLI2Sx_CLK   = 1000000U;
 static const uint32_t PLLI2Sx_N[11] = { 256U,   429U,   384U,   213U,   429U,   424U,   213U,   271U,   344U,   271U,   344U};
 static const uint32_t PLLI2Sx_R[11] = {   5U,     4U,     5U,     2U,     4U,     3U,     2U,     2U,     7U,     2U,     2U};
 static const uint32_t I2Sx_Fs[11]   = {8000U, 11025U, 12000U, 16000U, 22050U, 24000U, 32000U, 44100U, 48000U, 88200U, 96000U};
@@ -472,7 +473,6 @@ void I2Sx_MspInit(I2S_HandleTypeDef *hi2s)
 {
 	RCC_PLLI2SInitTypeDef RCC_PLLI2SInit;
 	GPIO_InitTypeDef GPIO_InitStruct;
-	HAL_StatusTypeDef status;
 
 	uint32_t index = find(I2Sx_Fs, sizeof(I2Sx_Fs)/sizeof(uint32_t), audio_out_ll.hw_params.audio_frequency);
 

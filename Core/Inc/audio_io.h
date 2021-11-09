@@ -147,9 +147,9 @@ typedef struct {
 typedef enum {
 	AUDIO_OUT_TX_HALF_COMPLETE_CB_ID,
 	AUDIO_OUT_TX_COMPLETE_CB_ID,
-} audio_out_cb_id_t;
+} audio_out_ll_cb_id_t;
 
-typedef void (*audio_out_write_callback_t)(uint16_t *address, const audio_out_cb_id_t callback_id);
+typedef void (*audio_out_write_callback_t)(uint16_t *address, const audio_out_ll_cb_id_t callback_id);
 
 /*
  * stm32f4xx_hal_i2s.h
@@ -232,9 +232,9 @@ audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t s
 /**< ****************************************************************************************************************************** */
 /**< Audio Reset GPIO I/O functions																									*/
 /**< ****************************************************************************************************************************** */
-void audio_io_reset_init(void);
-void audio_io_reset(audio_io_reset_state_t state);
-void audio_io_reset_deinit(void);
+void           audio_io_reset_init(void);
+void           audio_io_reset(audio_io_reset_state_t state);
+void           audio_io_reset_deinit(void);
 
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Stream functions            																						*/

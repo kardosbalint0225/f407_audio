@@ -44,6 +44,7 @@
 /* USER CODE BEGIN PV */
 extern DMA_HandleTypeDef hdma_i2c_tx;
 extern DMA_HandleTypeDef hdma_i2c_rx;
+extern DMA_HandleTypeDef hdma_i2s_tx;
 extern DMA_HandleTypeDef hdma_uart_tx;
 extern UART_HandleTypeDef huart;
 /* USER CODE END PV */
@@ -220,6 +221,11 @@ void EXTI0_IRQHandler(void)
 void DMA1_Stream0_IRQHandler(void)
 {
 	HAL_DMA_IRQHandler(&hdma_i2c_rx);
+}
+
+void DMA1_Stream5_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(&hdma_i2s_tx);
 }
 
 void DMA1_Stream6_IRQHandler(void)
