@@ -152,14 +152,24 @@ static void verify_default_state(void)
 
 static void load_register_settings(void)
 {
-    uint8_t address[13]  = {
-        CLOCKING_CONTROL,      PASSTHROUGH_A_SELECT,     PASSTHROUGH_B_SELECT, ANALOG_ZC_AND_SR_SETTINGS, 
-        MISCELLANEOUS_CONTROL, PCMA_VOLUME,              PCMB_VOLUME,          MASTER_A_VOLUME,      
-        MASTER_B_VOLUME,       HEADPHONE_A_VOLUME,       HEADPHONE_B_VOLUME,   SPEAKER_A_VOLUME,         
+    uint8_t address[14]  = {
+        CLOCKING_CONTROL,
+		INTERFACE_CONTROL_1,
+		PASSTHROUGH_A_SELECT,
+		PASSTHROUGH_B_SELECT,
+		ANALOG_ZC_AND_SR_SETTINGS,
+        MISCELLANEOUS_CONTROL,
+		PCMA_VOLUME,
+		PCMB_VOLUME,
+		MASTER_A_VOLUME,
+        MASTER_B_VOLUME,
+		HEADPHONE_A_VOLUME,
+		HEADPHONE_B_VOLUME,
+		SPEAKER_A_VOLUME,
         SPEAKER_B_VOLUME
     };
     
-    uint8_t settings[13];
+    uint8_t settings[14];
     uint8_t size = sizeof(settings)/sizeof(uint8_t);
 
     for (uint8_t i = 0; i < size; i++) {
@@ -168,20 +178,21 @@ static void load_register_settings(void)
         }
     }
 
-    settings[0] |= 0x81;    // Clocking Control: enable Auto-Detect and MCLKDIV2
-    settings[1] &= 0xF0;    // Passthrough A Select: No inputs selected
-    settings[2] &= 0xF0;    // Passthrough B Select: No inputs selected
-    settings[3] &= 0xF0;    // Analog Zero-Cross and Soft-Ramp: disabled
-    settings[4] &= 0x3D;    // Miscellaneous Controls: disable PASSTHRUx and digital soft ramp
-    settings[4] |= 0x30;    // Miscellaneous Controls: mute analog passthrough
-    settings[5]  = 0x00;    // PCMA Volume: 0 dB
-    settings[6]  = 0x00;    // PCMB Volume: 0 dB
-    settings[7]  = 0x00;    // MSTA Volume: 0 dB
-    settings[8]  = 0x00;    // MSTB Volume: 0 dB
-    settings[9]  = 0x00;    // HPA Volume:  0 dB
-    settings[10] = 0x00;    // HPB Volume:  0 dB
-    settings[11] = 0x01;    // SPKA Volume: Muted
-    settings[12] = 0x01;    // SPKB Volume: Muted
+    settings[0]  = 0x81;    // Clocking Control: enable Auto-Detect and MCLKDIV2
+    settings[1]  = 0x04;	// Interface Control 1: I2S DACDIF
+    settings[2] &= 0xF0;    // Passthrough A Select: No inputs selected
+    settings[3] &= 0xF0;    // Passthrough B Select: No inputs selected
+    settings[4] &= 0xF0;    // Analog Zero-Cross and Soft-Ramp: disabled
+    settings[5] &= 0x3D;    // Miscellaneous Controls: disable PASSTHRUx and digital soft ramp
+    settings[5] |= 0x30;    // Miscellaneous Controls: mute analog passthrough
+    settings[6]  = 0x00;    // PCMA Volume: 0 dB
+    settings[7]  = 0x00;    // PCMB Volume: 0 dB
+    settings[8]  = 0x00;    // MSTA Volume: 0 dB
+    settings[9]  = 0x00;    // MSTB Volume: 0 dB
+    settings[10]  = 0x00;    // HPA Volume:  0 dB
+    settings[11] = 0x00;    // HPB Volume:  0 dB
+    settings[12] = 0x01;    // SPKA Volume: Muted
+    settings[13] = 0x01;    // SPKB Volume: Muted
 
     for (uint8_t i = 0; i < size; i++) {
         verified_io_write(address[i], &settings[i]);
