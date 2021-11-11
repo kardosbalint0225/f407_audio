@@ -254,7 +254,7 @@ codec_status_t cs43l22_deinit(void)
 static void power_down(cs43l22_power_state_t power_state)
 {
     /**< ****************************************************************************************************** */
-    /**< 1. Mute the DAC’s and PWM outputs                                                                      */
+    /**< 1. Mute the DAC and PWM outputs                                                                      */
     /**< ****************************************************************************************************** */
     uint8_t playback_ctl_2;
     if (AUDIO_IO_OK != cs43l22_io.read(PLAYBACK_CONTROL_2, &playback_ctl_2, 1, true)) {

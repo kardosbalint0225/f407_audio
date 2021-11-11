@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 /**< ****************************************************************************************************************************** */
 /**< I2C peripheral configuration defines (control interface of the audio codec)													*/
 /**< ****************************************************************************************************************************** */
@@ -36,6 +37,7 @@
 #define __I2CxRX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
 #define I2CxRX_DMA_Stream_IRQn					DMA1_Stream0_IRQn
 
+
 /**< ****************************************************************************************************************************** */
 /**< GPIO configuration defines (reset pin of the audio codec)																		*/
 /**< ****************************************************************************************************************************** */
@@ -43,6 +45,7 @@
 #define AUDIO_IO_RESET_PIN						GPIO_PIN_4
 #define __AUDIO_IO_RESET_GPIO_CLK_ENABLE()  	__HAL_RCC_GPIOD_CLK_ENABLE()
 #define __AUDIO_IO_RESET_GPIO_CLK_DISABLE()  	__HAL_RCC_GPIOD_CLK_DISABLE()
+
 
 /**< ****************************************************************************************************************************** */
 /**< I2S peripheral configuration defines (stream interface of the audio codec)														*/
@@ -86,19 +89,25 @@
 #define	AUDIO_OUT_DATAFORMAT_24B            	(0x00000003U)
 #define	AUDIO_OUT_DATAFORMAT_32B            	(0x00000005U)
 
+
 typedef enum {
 	AUDIO_IO_OK = 0,
 	AUDIO_IO_INIT_ERROR,
 	AUDIO_IO_DEINIT_ERROR,
 	AUDIO_IO_READ_ERROR,
 	AUDIO_IO_WRITE_ERROR,
-	AUDIO_OUT_INIT_ERROR,
-	AUDIO_OUT_DEINIT_ERROR,
-	AUDIO_OUT_WRITE_ERROR,
-	AUDIO_OUT_PAUSE_ERROR,
-	AUDIO_OUT_RESUME_ERROR,
-	AUDIO_OUT_STOP_ERROR,
-} audio_status_t;
+} audio_io_status_t;
+
+typedef enum {
+	AUDIO_OUT_LL_OK = 0,
+	AUDIO_OUT_LL_INIT_ERROR,
+	AUDIO_OUT_LL_DEINIT_ERROR,
+	AUDIO_OUT_LL_WRITE_ERROR,
+	AUDIO_OUT_LL_PAUSE_ERROR,
+	AUDIO_OUT_LL_RESUME_ERROR,
+	AUDIO_OUT_LL_STOP_ERROR,
+	AUDIO_OUT_LL_CB_PARAMS_ERROR,
+} audio_out_ll_status_t;
 
 typedef enum {
 	AUDIO_IO_RESET_STATE_LOW  = 0x00U,
@@ -145,11 +154,11 @@ typedef struct {
 } audio_io_err_t;
 
 typedef enum {
-	AUDIO_OUT_TX_HALF_COMPLETE_CB_ID,
-	AUDIO_OUT_TX_COMPLETE_CB_ID,
+	AUDIO_OUT_LL_TX_HALF_COMPLETE_CB_ID,
+	AUDIO_OUT_LL_TX_COMPLETE_CB_ID,
 } audio_out_ll_cb_id_t;
 
-typedef void (*audio_out_write_callback_t)(uint16_t *address, const audio_out_ll_cb_id_t callback_id);
+typedef void (*audio_out_ll_write_callback_t)(uint16_t *address, const audio_out_ll_cb_id_t callback_id);
 
 /*
  * stm32f4xx_hal_i2s.h
@@ -176,7 +185,6 @@ typedef void (*audio_out_write_callback_t)(uint16_t *address, const audio_out_ll
  *                  - I2S_AUDIOFREQ_8K				(8000U)
  *                  - I2S_AUDIOFREQ_DEFAULT			(2U)
  */
-
 typedef struct {
 	uint32_t standard;
 	uint32_t data_format;
@@ -184,7 +192,7 @@ typedef struct {
 } audio_out_ll_hw_params_t;
 
 typedef struct {
-	audio_out_write_callback_t write_callback;
+	audio_out_ll_write_callback_t write_callback;
 	uint16_t *m0_buffer;
 	uint16_t *m1_buffer;
 } audio_out_ll_cb_params_t;
@@ -202,32 +210,32 @@ void audio_out_ll_set_hw_params(audio_out_ll_hw_params_t *hw_params);
 #endif
 
 typedef struct {
-	audio_status_t (*init)(void);
-	audio_status_t (*deinit)(void);
-	audio_status_t (*read)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
-	audio_status_t (*write)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+	audio_io_status_t (*init)(void);
+	audio_io_status_t (*deinit)(void);
+	audio_io_status_t (*read)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+	audio_io_status_t (*write)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
 	void           (*reset_init)(void);
 	void           (*reset_deinit)(void);
 	void           (*reset)(audio_io_reset_state_t state);
 } audio_io_if_t;
 
 typedef struct {
-	audio_status_t (*init)(audio_out_ll_hw_params_t *haout);
-	audio_status_t (*deinit)(void);
-	audio_status_t (*write)(uint16_t *data, const uint16_t size);
-	audio_status_t (*pause)(void);
-	audio_status_t (*resume)(void);
-	audio_status_t (*stop)(void);
+	audio_out_ll_status_t (*init)(audio_out_ll_hw_params_t *haout);
+	audio_out_ll_status_t (*deinit)(void);
+	audio_out_ll_status_t (*write)(uint16_t *data, const uint16_t size);
+	audio_out_ll_status_t (*pause)(void);
+	audio_out_ll_status_t (*resume)(void);
+	audio_out_ll_status_t (*stop)(void);
 } audio_out_ll_if_t;
 
 
 /**< ****************************************************************************************************************************** */
 /**< Audio Control Port I/O functions																								*/
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_io_init(void);
-audio_status_t audio_io_deinit(void);
-audio_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
-audio_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+audio_io_status_t audio_io_init(void);
+audio_io_status_t audio_io_deinit(void);
+audio_io_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
+audio_io_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
 
 /**< ****************************************************************************************************************************** */
 /**< Audio Reset GPIO I/O functions																									*/
@@ -237,15 +245,15 @@ void           audio_io_reset(audio_io_reset_state_t state);
 void           audio_io_reset_deinit(void);
 
 /**< ****************************************************************************************************************************** */
-/**< Audio Output Stream functions            																						*/
+/**< Audio Output Low-Level Stream functions            																						*/
 /**< ****************************************************************************************************************************** */
-audio_status_t audio_out_ll_init(audio_out_ll_hw_params_t *haout);
-audio_status_t audio_out_ll_deinit(void);
-audio_status_t audio_out_ll_write(uint16_t *data, const uint16_t size);
-audio_status_t audio_out_ll_pause(void);
-audio_status_t audio_out_ll_resume(void);
-audio_status_t audio_out_ll_stop(void);
-bool           audio_out_ll_set_cb_params(audio_out_ll_cb_params_t *cb_params);
+audio_out_ll_status_t audio_out_ll_init(audio_out_ll_hw_params_t *haout);
+audio_out_ll_status_t audio_out_ll_deinit(void);
+audio_out_ll_status_t audio_out_ll_write(uint16_t *data, const uint16_t size);
+audio_out_ll_status_t audio_out_ll_pause(void);
+audio_out_ll_status_t audio_out_ll_resume(void);
+audio_out_ll_status_t audio_out_ll_stop(void);
+audio_out_ll_status_t audio_out_ll_set_cb_params(audio_out_ll_cb_params_t *cb_params);
 
 
 #endif // AUDIO_IO_H

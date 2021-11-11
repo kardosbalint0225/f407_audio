@@ -151,17 +151,17 @@ void audio_out_ll_write_callback(uint16_t *address, const audio_out_ll_cb_id_t c
 {
     switch (callback_id)
     {
-        case AUDIO_OUT_TX_HALF_COMPLETE_CB_ID : {
+        case AUDIO_OUT_LL_TX_HALF_COMPLETE_CB_ID : {
 
             // read()
 
         } break;
 
-        case AUDIO_OUT_TX_COMPLETE_CB_ID : {
+        case AUDIO_OUT_LL_TX_COMPLETE_CB_ID : {
 
         	// read()
 
-        	if (AUDIO_IO_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
+        	if (AUDIO_OUT_LL_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
         		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
             	while (1);
             }
@@ -198,7 +198,7 @@ void audio_out_init(void)
 		while (1);
 	}
 
-	if (AUDIO_IO_OK != audio_out_ll_init(&hw_params)) {
+	if (AUDIO_OUT_LL_OK != audio_out_ll_init(&hw_params)) {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
 		while (1);
 	}
@@ -221,7 +221,7 @@ void audio_out_init(void)
 	cb_params.m1_buffer      = &audio_buffer[512];
 	cb_params.write_callback = audio_out_ll_write_callback;
 
-	if (true != audio_out_ll_set_cb_params(&cb_params)) {
+	if (AUDIO_OUT_LL_OK != audio_out_ll_set_cb_params(&cb_params)) {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
 		while (1);
 	}
@@ -231,7 +231,7 @@ void audio_out_init(void)
 		while (1);
 	}
 
-	if (AUDIO_IO_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
+	if (AUDIO_OUT_LL_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
 		while (1);
 	}
