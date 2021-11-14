@@ -25,6 +25,7 @@
 #include "audio.h"
 #include "debug_uart.h"
 #include <stdio.h>
+#include "sin_lut.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,13 +45,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t audio_appdata[1024];
+uint8_t *p_sin_lut;
+uint32_t p_sin_lut_offset;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void audio_out_write_callback(uint32_t size);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,7 +121,39 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  audio_out_init();
+  audio_status_t audio_status = audio_out_init();
+  if (AUDIO_OK != audio_status) {
+	  Error_Handler();
+  }
+
+  audio_out_hw_params_t hw_params = {
+	  .rate     = 44100,
+	  .channels = 2,
+	  .format   = AUDIO_FORMAT_S16_LE,
+  };
+
+  if (AUDIO_OK != audio_out_set_hw_params(&hw_params)) {
+	  Error_Handler();
+  }
+
+  if (AUDIO_OK != audio_out_set_write_callback(audio_out_write_callback)) {
+	  Error_Handler();
+  }
+
+  p_sin_lut_offset = 0;
+  p_sin_lut = (uint8_t *)sin_lut_16bit;
+
+  for (int i = 0; i < 1024; i++) {
+	  audio_appdata[i] = p_sin_lut[i];
+  }
+
+  if (AUDIO_OK != audio_out_write(audio_appdata, 1024)) {
+	  Error_Handler();
+  }
+
+  if (AUDIO_OK != audio_out_start()) {
+	  Error_Handler();
+  }
 
   while (1)
   {
@@ -128,6 +163,7 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+
 
 /**
   * @brief System Clock Configuration
@@ -178,6 +214,18 @@ void SystemClock_Config(void)
 
 
 /* USER CODE BEGIN 4 */
+
+void audio_out_write_callback(uint32_t size)
+{
+	for (uint32_t i = 0; i < size; i++) {
+		audio_appdata[i] = p_sin_lut[p_sin_lut_offset];
+		p_sin_lut_offset = (p_sin_lut_offset < 1023) ? (p_sin_lut_offset+1) : (0);
+	}
+
+	if (AUDIO_OK != audio_out_write(audio_appdata, size)) {
+		Error_Handler();
+	}
+}
 
 /* USER CODE END 4 */
 

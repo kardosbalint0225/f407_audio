@@ -178,8 +178,9 @@ static void load_register_settings(void)
         }
     }
 
-    settings[0]  = 0x81;    // Clocking Control: enable Auto-Detect and MCLKDIV2
-    settings[1]  = 0x04;	// Interface Control 1: I2S DACDIF
+    settings[0] |= 0x81;    // Clocking Control: enable Auto-Detect and MCLKDIV2
+    settings[1] &= 0xF3;    // Interface Control 1: I2S DACDIF
+    settings[1] |= 0x04;	// Interface Control 1: I2S DACDIF
     settings[2] &= 0xF0;    // Passthrough A Select: No inputs selected
     settings[3] &= 0xF0;    // Passthrough B Select: No inputs selected
     settings[4] &= 0xF0;    // Analog Zero-Cross and Soft-Ramp: disabled
@@ -189,7 +190,7 @@ static void load_register_settings(void)
     settings[7]  = 0x00;    // PCMB Volume: 0 dB
     settings[8]  = 0x00;    // MSTA Volume: 0 dB
     settings[9]  = 0x00;    // MSTB Volume: 0 dB
-    settings[10]  = 0x00;    // HPA Volume:  0 dB
+    settings[10] = 0x00;    // HPA Volume:  0 dB
     settings[11] = 0x00;    // HPB Volume:  0 dB
     settings[12] = 0x01;    // SPKA Volume: Muted
     settings[13] = 0x01;    // SPKB Volume: Muted
@@ -334,10 +335,69 @@ codec_status_t cs43l22_set_hw_params(audio_out_ll_hw_params_t *hw_params)
         cs43l22_error.io.bad_params = 1;
     }
 
-    power_down(CS43L22_POWER_STATE_STANDBY);
-    HAL_Delay(1);
-    power_up(CS43L22_POWER_STATE_STANDBY);
-    HAL_Delay(1);
+    // Get power state
+    uint8_t power_state;
+    if (AUDIO_IO_OK != cs43l22_io.read(POWER_CONTROL_1, &power_state, 1, true)) {
+        cs43l22_error.io.read = 1;
+    }
+
+    if (0x9EU == power_state) {
+        power_down(CS43L22_POWER_STATE_STANDBY);
+    }
+
+    uint8_t awl;
+    uint8_t dsp;
+    uint8_t dacdif;
+    switch (hw_params->standard)
+    {
+        case AUDIO_OUT_LL_STANDARD_I2S : { 
+            dacdif = 0x04U;
+            dsp    = 0x00U;
+            awl    = 0x00U;
+        } break;
+
+        case AUDIO_OUT_LL_STANDARD_LEFT_JUSTIFIED : {
+            dacdif = 0x00U; 
+            dsp    = 0x00U;  
+            awl    = 0x00U;                                                           
+        } break;
+
+        case AUDIO_OUT_LL_STANDARD_RIGHT_JUSTIFIED : {
+            dacdif = 0x08U;
+            dsp    = 0x00U; 
+            awl    = (AUDIO_OUT_LL_DATAFORMAT_16B != hw_params->data_format) ? (0x00U) : (0x03U);       
+        } break;
+
+        case AUDIO_OUT_LL_STANDARD_DSP_MODE : {
+            dacdif = 0x00U; 
+            dsp    = 0x10U;   
+
+            if (AUDIO_OUT_LL_DATAFORMAT_16B == hw_params->data_format) {
+                awl = 0x03U;
+            } else if (AUDIO_OUT_LL_DATAFORMAT_24B == hw_params->data_format) {
+                awl = 0x01U;
+            } else {
+                awl = 0x00U;
+            }   
+
+        } break;
+
+        default : {
+            dacdif = 0x04U;
+            dsp    = 0x00U;  
+            awl    = 0x00U;                                                           
+        } break;                                   
+    }
+
+    uint8_t interface_ctl_1;
+    if (AUDIO_IO_OK != cs43l22_io.read(INTERFACE_CONTROL_1, &interface_ctl_1, 1, true)) {
+        cs43l22_error.io.read = 1;
+    }
+
+    interface_ctl_1 &= 0x20U;
+    interface_ctl_1 |= (dsp | dacdif | awl);
+
+    verified_io_write(INTERFACE_CONTROL_1, &interface_ctl_1);
 
     codec_status_t retc = (0 != cs43l22_error.io.w) ? (CODEC_HW_PARAMS_ERROR) : (CODEC_OK);
     return retc;

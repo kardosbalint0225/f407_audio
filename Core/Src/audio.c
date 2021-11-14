@@ -1,5 +1,5 @@
 #include "audio.h"
-#include "stm32f4xx_hal.h"
+#include <stddef.h>
 
 static codec_if_t codec = {
 	.init          = cs43l22_init,
@@ -13,227 +13,301 @@ static codec_if_t codec = {
 	.set_mute      = cs43l22_set_mute,
 };
 
-uint16_t audio_buffer[1024];
-
-const int16_t sin_lut_16bit[1024] = {
-		 0,    201,    402,    603,    804,   1005,   1206,   1407,
-	  1608,   1809,   2009,   2210,   2411,   2611,   2811,   3012,
-	  3212,   3412,   3612,   3812,   4011,   4211,   4410,   4609,
-	  4808,   5007,   5205,   5404,   5602,   5800,   5998,   6195,
-	  6393,   6590,   6787,   6983,   7180,   7376,   7571,   7767,
-	  7962,   8157,   8351,   8546,   8740,   8933,   9127,   9319,
-	  9512,   9704,   9896,  10088,  10279,  10469,  10660,  10850,
-	 11039,  11228,  11417,  11605,  11793,  11980,  12167,  12354,
-	 12540,  12725,  12910,  13095,  13279,  13463,  13646,  13828,
-	 14010,  14192,  14373,  14553,  14733,  14912,  15091,  15269,
-	 15447,  15624,  15800,  15976,  16151,  16326,  16500,  16673,
-	 16846,  17018,  17190,  17361,  17531,  17700,  17869,  18037,
-	 18205,  18372,  18538,  18703,  18868,  19032,  19195,  19358,
-	 19520,  19681,  19841,  20001,  20160,  20318,  20475,  20632,
-	 20788,  20943,  21097,  21251,  21403,  21555,  21706,  21856,
-	 22006,  22154,  22302,  22449,  22595,  22740,  22884,  23028,
-	 23170,  23312,  23453,  23593,  23732,  23870,  24008,  24144,
-	 24279,  24414,  24548,  24680,  24812,  24943,  25073,  25202,
-	 25330,  25457,  25583,  25708,  25833,  25956,  26078,  26199,
-	 26320,  26439,  26557,  26674,  26791,  26906,  27020,  27133,
-	 27246,  27357,  27467,  27576,  27684,  27791,  27897,  28002,
-	 28106,  28209,  28311,  28411,  28511,  28610,  28707,  28803,
-	 28899,  28993,  29086,  29178,  29269,  29359,  29448,  29535,
-	 29622,  29707,  29792,  29875,  29957,  30038,  30118,  30196,
-	 30274,  30350,  30425,  30499,  30572,  30644,  30715,  30784,
-	 30853,  30920,  30986,  31050,  31114,  31177,  31238,  31298,
-	 31357,  31415,  31471,  31527,  31581,  31634,  31686,  31737,
-	 31786,  31834,  31881,  31927,  31972,  32015,  32058,  32099,
-	 32138,  32177,  32214,  32251,  32286,  32319,  32352,  32383,
-	 32413,  32442,  32470,  32496,  32522,  32546,  32568,  32590,
-	 32610,  32629,  32647,  32664,  32679,  32693,  32706,  32718,
-	 32729,  32738,  32746,  32753,  32758,  32762,  32766,  32767,
-	 32767,  32767,  32766,  32762,  32758,  32753,  32746,  32738,
-	 32729,  32718,  32706,  32693,  32679,  32664,  32647,  32629,
-	 32610,  32590,  32568,  32546,  32522,  32496,  32470,  32442,
-	 32413,  32383,  32352,  32319,  32286,  32251,  32214,  32177,
-	 32138,  32099,  32058,  32015,  31972,  31927,  31881,  31834,
-	 31786,  31737,  31686,  31634,  31581,  31527,  31471,  31415,
-	 31357,  31298,  31238,  31177,  31114,  31050,  30986,  30920,
-	 30853,  30784,  30715,  30644,  30572,  30499,  30425,  30350,
-	 30274,  30196,  30118,  30038,  29957,  29875,  29792,  29707,
-	 29622,  29535,  29448,  29359,  29269,  29178,  29086,  28993,
-	 28899,  28803,  28707,  28610,  28511,  28411,  28311,  28209,
-	 28106,  28002,  27897,  27791,  27684,  27576,  27467,  27357,
-	 27246,  27133,  27020,  26906,  26791,  26674,  26557,  26439,
-	 26320,  26199,  26078,  25956,  25833,  25708,  25583,  25457,
-	 25330,  25202,  25073,  24943,  24812,  24680,  24548,  24414,
-	 24279,  24144,  24008,  23870,  23732,  23593,  23453,  23312,
-	 23170,  23028,  22884,  22740,  22595,  22449,  22302,  22154,
-	 22006,  21856,  21706,  21555,  21403,  21251,  21097,  20943,
-	 20788,  20632,  20475,  20318,  20160,  20001,  19841,  19681,
-	 19520,  19358,  19195,  19032,  18868,  18703,  18538,  18372,
-	 18205,  18037,  17869,  17700,  17531,  17361,  17190,  17018,
-	 16846,  16673,  16500,  16326,  16151,  15976,  15800,  15624,
-	 15447,  15269,  15091,  14912,  14733,  14553,  14373,  14192,
-	 14010,  13828,  13646,  13463,  13279,  13095,  12910,  12725,
-	 12540,  12354,  12167,  11980,  11793,  11605,  11417,  11228,
-	 11039,  10850,  10660,  10469,  10279,  10088,   9896,   9704,
-	  9512,   9319,   9127,   8933,   8740,   8546,   8351,   8157,
-	  7962,   7767,   7571,   7376,   7180,   6983,   6787,   6590,
-	  6393,   6195,   5998,   5800,   5602,   5404,   5205,   5007,
-	  4808,   4609,   4410,   4211,   4011,   3812,   3612,   3412,
-	  3212,   3012,   2811,   2611,   2411,   2210,   2009,   1809,
-	  1608,   1407,   1206,   1005,    804,    603,    402,    201,
-		 0,   -201,   -402,   -603,   -804,  -1005,  -1206,  -1407,
-	 -1608,  -1809,  -2009,  -2210,  -2411,  -2611,  -2811,  -3012,
-	 -3212,  -3412,  -3612,  -3812,  -4011,  -4211,  -4410,  -4609,
-	 -4808,  -5007,  -5205,  -5404,  -5602,  -5800,  -5998,  -6195,
-	 -6393,  -6590,  -6787,  -6983,  -7180,  -7376,  -7571,  -7767,
-	 -7962,  -8157,  -8351,  -8546,  -8740,  -8933,  -9127,  -9319,
-	 -9512,  -9704,  -9896, -10088, -10279, -10469, -10660, -10850,
-	-11039, -11228, -11417, -11605, -11793, -11980, -12167, -12354,
-	-12540, -12725, -12910, -13095, -13279, -13463, -13646, -13828,
-	-14010, -14192, -14373, -14553, -14733, -14912, -15091, -15269,
-	-15447, -15624, -15800, -15976, -16151, -16326, -16500, -16673,
-	-16846, -17018, -17190, -17361, -17531, -17700, -17869, -18037,
-	-18205, -18372, -18538, -18703, -18868, -19032, -19195, -19358,
-	-19520, -19681, -19841, -20001, -20160, -20318, -20475, -20632,
-	-20788, -20943, -21097, -21251, -21403, -21555, -21706, -21856,
-	-22006, -22154, -22302, -22449, -22595, -22740, -22884, -23028,
-	-23170, -23312, -23453, -23593, -23732, -23870, -24008, -24144,
-	-24279, -24414, -24548, -24680, -24812, -24943, -25073, -25202,
-	-25330, -25457, -25583, -25708, -25833, -25956, -26078, -26199,
-	-26320, -26439, -26557, -26674, -26791, -26906, -27020, -27133,
-	-27246, -27357, -27467, -27576, -27684, -27791, -27897, -28002,
-	-28106, -28209, -28311, -28411, -28511, -28610, -28707, -28803,
-	-28899, -28993, -29086, -29178, -29269, -29359, -29448, -29535,
-	-29622, -29707, -29792, -29875, -29957, -30038, -30118, -30196,
-	-30274, -30350, -30425, -30499, -30572, -30644, -30715, -30784,
-	-30853, -30920, -30986, -31050, -31114, -31177, -31238, -31298,
-	-31357, -31415, -31471, -31527, -31581, -31634, -31686, -31737,
-	-31786, -31834, -31881, -31927, -31972, -32015, -32058, -32099,
-	-32138, -32177, -32214, -32251, -32286, -32319, -32352, -32383,
-	-32413, -32442, -32470, -32496, -32522, -32546, -32568, -32590,
-	-32610, -32629, -32647, -32664, -32679, -32693, -32706, -32718,
-	-32729, -32738, -32746, -32753, -32758, -32762, -32766, -32767,
-	-32768, -32767, -32766, -32762, -32758, -32753, -32746, -32738,
-	-32729, -32718, -32706, -32693, -32679, -32664, -32647, -32629,
-	-32610, -32590, -32568, -32546, -32522, -32496, -32470, -32442,
-	-32413, -32383, -32352, -32319, -32286, -32251, -32214, -32177,
-	-32138, -32099, -32058, -32015, -31972, -31927, -31881, -31834,
-	-31786, -31737, -31686, -31634, -31581, -31527, -31471, -31415,
-	-31357, -31298, -31238, -31177, -31114, -31050, -30986, -30920,
-	-30853, -30784, -30715, -30644, -30572, -30499, -30425, -30350,
-	-30274, -30196, -30118, -30038, -29957, -29875, -29792, -29707,
-	-29622, -29535, -29448, -29359, -29269, -29178, -29086, -28993,
-	-28899, -28803, -28707, -28610, -28511, -28411, -28311, -28209,
-	-28106, -28002, -27897, -27791, -27684, -27576, -27467, -27357,
-	-27246, -27133, -27020, -26906, -26791, -26674, -26557, -26439,
-	-26320, -26199, -26078, -25956, -25833, -25708, -25583, -25457,
-	-25330, -25202, -25073, -24943, -24812, -24680, -24548, -24414,
-	-24279, -24144, -24008, -23870, -23732, -23593, -23453, -23312,
-	-23170, -23028, -22884, -22740, -22595, -22449, -22302, -22154,
-	-22006, -21856, -21706, -21555, -21403, -21251, -21097, -20943,
-	-20788, -20632, -20475, -20318, -20160, -20001, -19841, -19681,
-	-19520, -19358, -19195, -19032, -18868, -18703, -18538, -18372,
-	-18205, -18037, -17869, -17700, -17531, -17361, -17190, -17018,
-	-16846, -16673, -16500, -16326, -16151, -15976, -15800, -15624,
-	-15447, -15269, -15091, -14912, -14733, -14553, -14373, -14192,
-	-14010, -13828, -13646, -13463, -13279, -13095, -12910, -12725,
-	-12540, -12354, -12167, -11980, -11793, -11605, -11417, -11228,
-	-11039, -10850, -10660, -10469, -10279, -10088,  -9896,  -9704,
-	 -9512,  -9319,  -9127,  -8933,  -8740,  -8546,  -8351,  -8157,
-	 -7962,  -7767,  -7571,  -7376,  -7180,  -6983,  -6787,  -6590,
-	 -6393,  -6195,  -5998,  -5800,  -5602,  -5404,  -5205,  -5007,
-	 -4808,  -4609,  -4410,  -4211,  -4011,  -3812,  -3612,  -3412,
-	 -3212,  -3012,  -2811,  -2611,  -2411,  -2210,  -2009,  -1809,
+static audio_err_t audio_error;
+static audio_out_hw_params_t audio_out_hw_params = {
+	.rate     = 0,
+	.channels = 0,
+//	.access   = 0,
+	.format   = 0,
 };
 
-static uint16_t led_counter = 0;
+uint8_t audio_buffer[AUDIO_BUFFER_SIZE] __attribute__((aligned(16)));
+static uint8_t *active_period = NULL;
+
+static uint32_t convert_audio_format_to_size(audio_format_t format);
+static uint32_t convert_audio_format_to_data_format(audio_format_t format);
+
+audio_out_write_callback_t write_callback = NULL;
 
 void audio_out_ll_write_callback(uint16_t *address, const audio_out_ll_cb_id_t callback_id)
 {
     switch (callback_id)
     {
         case AUDIO_OUT_LL_TX_HALF_COMPLETE_CB_ID : {
-
-            // read()
+            
+			active_period = audio_buffer;
+			write_callback(AUDIO_BUFFER_HALF_SIZE);
 
         } break;
 
         case AUDIO_OUT_LL_TX_COMPLETE_CB_ID : {
 
-        	// read()
+			active_period = &audio_buffer[AUDIO_BUFFER_HALF_SIZE];
+			write_callback(AUDIO_BUFFER_HALF_SIZE);
 
-        	if (AUDIO_OUT_LL_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
-        		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-            	while (1);
+			const uint16_t size = AUDIO_BUFFER_SIZE / sizeof(uint16_t);
+        	if (AUDIO_OUT_LL_OK != audio_out_ll_write((uint16_t *)audio_buffer, size)) {
+        		
             }
-
-        	if (32 == led_counter) {
-        		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-        		led_counter = 0;
-        	} else {
-        		led_counter++;
-        	}
-
 
         } break;
 
         default : {
 
             // error()
-        	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 
         } break;
     }
-
 }
 
-void audio_out_init(void)
+audio_status_t audio_out_init(void)
 {
-	audio_out_ll_hw_params_t hw_params;
-	hw_params.audio_frequency = 44100;
-	hw_params.data_format     = AUDIO_OUT_DATAFORMAT_16B;
-	hw_params.standard        = AUDIO_OUT_STANDARD_PHILIPS;
+	audio_error.codec.w = 0;
+	audio_error.out.w   = 0;
+	active_period       = audio_buffer;
+
+	for (uint32_t i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+		audio_buffer[i] = 0;
+	}
 
 	if (CODEC_OK != codec.init()) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
-	}
-
-	if (AUDIO_OUT_LL_OK != audio_out_ll_init(&hw_params)) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
-	}
-
-	HAL_Delay(100);
-
-/* No bueno :(
-	if (CODEC_OK != codec.set_hw_params(&hw_params)) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
-	}
-*/
-
-	for (uint32_t i = 0; i < 1024; i++) {
-		audio_buffer[i] = (uint16_t)sin_lut_16bit[i];
+		audio_error.codec.init = 1;
 	}
 
 	audio_out_ll_cb_params_t cb_params;
-	cb_params.m0_buffer      = &audio_buffer[0];
-	cb_params.m1_buffer      = &audio_buffer[512];
+	cb_params.m0_buffer      = (uint16_t *)audio_buffer;
+	cb_params.m1_buffer      = (uint16_t *)&audio_buffer[AUDIO_BUFFER_HALF_SIZE];
 	cb_params.write_callback = audio_out_ll_write_callback;
 
 	if (AUDIO_OUT_LL_OK != audio_out_ll_set_cb_params(&cb_params)) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
+		audio_error.out.cb_params = 1;
+	}
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_INIT_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_deinit(void)
+{
+	if (CODEC_OK != codec.deinit()) {
+		audio_error.codec.deinit = 1;
+	}
+
+	if (AUDIO_OUT_LL_OK != audio_out_ll_deinit()) {
+		audio_error.out.deinit = 1;
+	}
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_DEINIT_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_write(uint8_t *data, const uint32_t size)
+{
+	if (size > AUDIO_BUFFER_SIZE) {
+		audio_error.out.write = 1;
+	}
+
+//	uint8_t channels = audio_out_hw_params.channels;
+//	uint32_t format  = convert_audio_format_to_size(audio_out_hw_params.format);
+
+	/* Does not support 24bit and mono yet */
+	for (uint32_t i = 0; i < size; i++) {
+		active_period[i] = data[i];
+	}
+	
+	audio_status_t retc = (0 != audio_error.out.w) ? (AUDIO_OUT_WRITE_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_start(void)
+{
+	const uint16_t size = AUDIO_BUFFER_SIZE / sizeof(uint16_t);
+	if (AUDIO_OUT_LL_OK != audio_out_ll_write((uint16_t *)audio_buffer, size)) {
+		audio_error.out.start = 1;
 	}
 
 	if (CODEC_OK != codec.play()) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
+		audio_error.codec.play = 1;
 	}
 
-	if (AUDIO_OUT_LL_OK != audio_out_ll_write(&audio_buffer[0], 1024)) {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		while (1);
+	audio_status_t retc = (0 != audio_error.out.w) ? (AUDIO_OUT_START_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+static uint32_t convert_audio_format_to_size(audio_format_t format)
+{
+	uint32_t size;
+
+	switch (format)
+	{
+		case AUDIO_FORMAT_S8       : 
+		case AUDIO_FORMAT_U8       : size = 1;
+		                             break;
+		case AUDIO_FORMAT_S16_LE   : 
+		case AUDIO_FORMAT_S16_BE   : 
+        case AUDIO_FORMAT_U16_LE   : 
+		case AUDIO_FORMAT_U16_BE   : size = 2;
+		                             break;
+	    case AUDIO_FORMAT_S24_LE   : 
+		case AUDIO_FORMAT_S24_BE   :
+		case AUDIO_FORMAT_U24_LE   :
+		case AUDIO_FORMAT_U24_BE   : size = 3;
+		                             break;
+		case AUDIO_FORMAT_S32_LE   :
+		case AUDIO_FORMAT_S32_BE   :
+		case AUDIO_FORMAT_U32_LE   :
+		case AUDIO_FORMAT_U32_BE   : size = 4;
+		                             break;
+		case AUDIO_FORMAT_FLOAT_LE :
+		case AUDIO_FORMAT_FLOAT_BE : size = 4;
+		                             break;
+		default                    : size = 2;
+		                             break;
+
 	}
+
+	return size;
+}
+
+static uint32_t convert_audio_format_to_data_format(audio_format_t format)
+{
+	uint32_t data_format;
+
+	switch (format)
+	{
+		case AUDIO_FORMAT_S8       : 
+		case AUDIO_FORMAT_U8       : data_format = AUDIO_OUT_LL_DATAFORMAT_16B;
+		                             break;
+		case AUDIO_FORMAT_S16_LE   : 
+		case AUDIO_FORMAT_S16_BE   : 
+        case AUDIO_FORMAT_U16_LE   : 
+		case AUDIO_FORMAT_U16_BE   : data_format = AUDIO_OUT_LL_DATAFORMAT_16B;
+		                             break;
+	    case AUDIO_FORMAT_S24_LE   : 
+		case AUDIO_FORMAT_S24_BE   :
+		case AUDIO_FORMAT_U24_LE   :
+		case AUDIO_FORMAT_U24_BE   : data_format = AUDIO_OUT_LL_DATAFORMAT_24B;
+		                             break;
+		case AUDIO_FORMAT_S32_LE   :
+		case AUDIO_FORMAT_S32_BE   :
+		case AUDIO_FORMAT_U32_LE   :
+		case AUDIO_FORMAT_U32_BE   : data_format = AUDIO_OUT_LL_DATAFORMAT_32B;
+		                             break;
+		case AUDIO_FORMAT_FLOAT_LE :
+		case AUDIO_FORMAT_FLOAT_BE : data_format = AUDIO_OUT_LL_DATAFORMAT_32B;
+		                             break;
+		default                    : data_format = AUDIO_OUT_LL_DATAFORMAT_16B;
+		                             break;
+
+	}
+
+	return data_format;
+}
+
+audio_status_t audio_out_set_hw_params(audio_out_hw_params_t *hw_params)
+{
+	if (NULL == hw_params) {
+		audio_error.codec.bad_params = 1;
+	}
+
+	audio_out_ll_hw_params_t ll_hw_params = {
+		.audio_frequency = hw_params->rate,
+		.standard        = AUDIO_OUT_LL_STANDARD_I2S,
+        .data_format     = convert_audio_format_to_data_format(hw_params->format),
+	};
+
+	if (AUDIO_OUT_LL_OK != audio_out_ll_init(&ll_hw_params)) {
+		audio_error.out.init = 1;
+	}
+
+	if (CODEC_OK != codec.set_hw_params(&ll_hw_params)) {
+		audio_error.codec.hw_params = 1;
+	}
+
+	audio_out_hw_params.rate     = hw_params->rate;
+	audio_out_hw_params.channels = hw_params->channels;
+//	audio_out_hw_params.access   = hw_params->access;
+	audio_out_hw_params.format   = hw_params->format;
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_HW_PARAMS_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_pause(void)
+{
+	if (AUDIO_OUT_LL_OK != audio_out_ll_pause()) {
+		audio_error.out.pause = 1;
+	}
+
+	if (CODEC_OK != codec.pause()) {
+		audio_error.codec.pause = 1;
+	}
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_PAUSE_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_resume(void)
+{
+	if (CODEC_OK != codec.resume()) {
+		audio_error.codec.resume = 1;
+	}
+
+	if (AUDIO_OUT_LL_OK != audio_out_ll_resume()) {
+		audio_error.out.resume = 1;
+	}
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_RESUME_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_stop(void)
+{
+	if (CODEC_OK != codec.stop()) {
+		audio_error.codec.stop = 1;
+	}
+
+	if (AUDIO_OUT_LL_OK != audio_out_ll_stop()) {
+		audio_error.out.stop = 1;
+	}
+
+	if (AUDIO_OUT_LL_OK != audio_out_ll_deinit()) {
+		audio_error.out.deinit = 1;
+	}
+
+	audio_status_t retc = ((0 != audio_error.codec.w) || (0 != audio_error.out.w)) ? (AUDIO_OUT_STOP_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_set_volume(float volume)
+{
+	if (CODEC_OK != codec.set_volume(volume)) {
+		audio_error.codec.volume = 1;
+	}
+
+	audio_status_t retc = (0 != audio_error.codec.w) ? (AUDIO_OUT_VOLUME_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_set_mute(codec_mute_t mute)
+{
+	if (CODEC_OK != codec.set_mute(mute)) {
+		audio_error.codec.mute = 1;
+	}
+
+	audio_status_t retc = (0 != audio_error.codec.w) ? (AUDIO_OUT_MUTE_ERROR) : (AUDIO_OK);
+	return retc;
+}
+
+audio_status_t audio_out_set_write_callback(audio_out_write_callback_t callback)
+{
+	if (NULL == callback) {
+		audio_error.out.bad_params = 1;
+	}
+
+	write_callback = callback;
+
+	audio_status_t retc = (0 != audio_error.out.w) ? (AUDIO_OUT_CALLBACK_ERROR) : (AUDIO_OK);
+	return retc;
 }
 

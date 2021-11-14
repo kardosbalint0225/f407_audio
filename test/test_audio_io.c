@@ -81,8 +81,8 @@ void test_audio_io_init_for_ok(void)
 	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
 	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
 
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_OK;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_OK;
 	actual = audio_io_init();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -99,8 +99,8 @@ void test_audio_io_init_for_busy_state_error(void)
 	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
 	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
 
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_INIT_ERROR;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_INIT_ERROR;
 	actual = audio_io_init();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -117,8 +117,8 @@ void test_audio_io_init_for_device_not_ready_error(void)
 	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_OK);
 	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_BUSY);
 	
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_INIT_ERROR;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_INIT_ERROR;
 	actual = audio_io_init();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -135,8 +135,8 @@ void test_audio_io_init_for_ll_init_error(void)
 	HAL_I2C_Init_ExpectAnyArgsAndReturn(HAL_ERROR);
 	HAL_I2C_IsDeviceReady_ExpectAnyArgsAndReturn(HAL_OK);
 	
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_INIT_ERROR;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_INIT_ERROR;
 	actual = audio_io_init();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -154,8 +154,8 @@ void test_audio_io_deinit_for_ok(void)
 	
 	dma_deinit();
 	
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_OK;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_OK;
 	actual = audio_io_deinit();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -170,8 +170,8 @@ void test_audio_io_deinit_for_ll_deinit_error(void)
 	
 	dma_deinit();
 	
-	audio_status_t actual;
-	audio_status_t expected = AUDIO_IO_DEINIT_ERROR;
+	audio_io_status_t actual;
+	audio_io_status_t expected = AUDIO_IO_DEINIT_ERROR;
 	actual = audio_io_deinit();
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
@@ -181,7 +181,7 @@ void test_audio_io_deinit_for_ll_deinit_error(void)
  */
 uint16_t audio_buffer[1024];
 
-void audio_callback(uint16_t *data, const audio_out_cb_id_t callback_id)
+void audio_callback(uint16_t *data, const audio_out_ll_cb_id_t callback_id)
 {
 
 }
@@ -200,8 +200,8 @@ void test_audio_out_init_for_ok(void)
 	HAL_I2S_GetState_ExpectAnyArgsAndReturn(HAL_I2S_STATE_RESET);
 	HAL_I2S_Init_ExpectAnyArgsAndReturn(HAL_OK);
 	
-	audio_status_t actual = audio_out_ll_init(&hw_params);
-	audio_status_t expected = AUDIO_IO_OK;
+	audio_out_ll_status_t actual = audio_out_ll_init(&hw_params);
+	audio_out_ll_status_t expected = AUDIO_OUT_LL_OK;
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
@@ -219,8 +219,8 @@ void test_audio_out_init_for_i2s_busy_state_error(void)
 	HAL_I2S_GetState_ExpectAnyArgsAndReturn(HAL_I2S_STATE_BUSY);
 	HAL_I2S_Init_ExpectAnyArgsAndReturn(HAL_OK);
 	
-	audio_status_t actual = audio_out_ll_init(&hw_params);
-	audio_status_t expected = AUDIO_OUT_INIT_ERROR;
+	audio_out_ll_status_t actual = audio_out_ll_init(&hw_params);
+	audio_out_ll_status_t expected = AUDIO_OUT_LL_INIT_ERROR;
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
@@ -238,8 +238,8 @@ void test_audio_out_init_for_i2s_init_error(void)
 	HAL_I2S_GetState_ExpectAnyArgsAndReturn(HAL_I2S_STATE_RESET);
 	HAL_I2S_Init_ExpectAnyArgsAndReturn(HAL_ERROR);
 	
-	audio_status_t actual = audio_out_ll_init(&hw_params);
-	audio_status_t expected = AUDIO_OUT_INIT_ERROR;
+	audio_out_ll_status_t actual = audio_out_ll_init(&hw_params);
+	audio_out_ll_status_t expected = AUDIO_OUT_LL_INIT_ERROR;
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
@@ -254,8 +254,8 @@ void test_audio_out_deinit_for_ok(void)
 	HAL_I2S_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
 	HAL_I2S_DeInit_ExpectAnyArgsAndReturn(HAL_OK);
 
-	audio_status_t actual = audio_out_ll_deinit();
-	audio_status_t expected = AUDIO_IO_OK;
+	audio_out_ll_status_t actual = audio_out_ll_deinit();
+	audio_out_ll_status_t expected = AUDIO_OUT_LL_OK;
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
@@ -266,8 +266,8 @@ void test_audio_out_deinit_for_i2s_deinit_error(void)
 	HAL_I2S_UnRegisterCallback_IgnoreAndReturn(HAL_OK);
 	HAL_I2S_DeInit_ExpectAnyArgsAndReturn(HAL_ERROR);
 
-	audio_status_t actual = audio_out_ll_deinit();
-	audio_status_t expected = AUDIO_OUT_DEINIT_ERROR;
+	audio_out_ll_status_t actual = audio_out_ll_deinit();
+	audio_out_ll_status_t expected = AUDIO_OUT_LL_DEINIT_ERROR;
 	TEST_ASSERT_EQUAL((int)expected, (int)actual);
 }
 
@@ -515,13 +515,13 @@ void test_i2sx_mspdeinit_for_error(void)
 
 void test_defines(void)
 {
-	TEST_ASSERT_EQUAL(I2S_STANDARD_PHILIPS,   AUDIO_OUT_STANDARD_PHILIPS);
-	TEST_ASSERT_EQUAL(I2S_STANDARD_MSB,       AUDIO_OUT_STANDARD_LEFT_JUSTIFIED);
-	TEST_ASSERT_EQUAL(I2S_STANDARD_LSB,       AUDIO_OUT_STANDARD_RIGHT_JUSTIFIED);
-	TEST_ASSERT_EQUAL(I2S_STANDARD_PCM_SHORT, AUDIO_OUT_STANDARD_DSP_MODE);
-	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_16B,     AUDIO_OUT_DATAFORMAT_16B);
-	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_24B,     AUDIO_OUT_DATAFORMAT_24B);
-	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_32B,     AUDIO_OUT_DATAFORMAT_32B);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_PHILIPS,   AUDIO_OUT_LL_STANDARD_I2S);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_MSB,       AUDIO_OUT_LL_STANDARD_LEFT_JUSTIFIED);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_LSB,       AUDIO_OUT_LL_STANDARD_RIGHT_JUSTIFIED);
+	TEST_ASSERT_EQUAL(I2S_STANDARD_PCM_SHORT, AUDIO_OUT_LL_STANDARD_DSP_MODE);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_16B,     AUDIO_OUT_LL_DATAFORMAT_16B);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_24B,     AUDIO_OUT_LL_DATAFORMAT_24B);
+	TEST_ASSERT_EQUAL(I2S_DATAFORMAT_32B,     AUDIO_OUT_LL_DATAFORMAT_32B);
 }
 
 #endif // TEST

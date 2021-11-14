@@ -426,8 +426,8 @@ static HAL_StatusTypeDef I2Sx_Init(audio_out_ll_hw_params_t *haout)
 		audio_out_ll.hw_params.data_format     = haout->data_format;
 		audio_out_ll.hw_params.audio_frequency = haout->audio_frequency;
 	} else {
-		audio_out_ll.hw_params.standard        = AUDIO_OUT_STANDARD_LEFT_JUSTIFIED;	// default standard
-		audio_out_ll.hw_params.data_format     = AUDIO_OUT_DATAFORMAT_16B;			// default data format
+		audio_out_ll.hw_params.standard        = AUDIO_OUT_LL_STANDARD_LEFT_JUSTIFIED;	// default standard
+		audio_out_ll.hw_params.data_format     = AUDIO_OUT_LL_DATAFORMAT_16B;			// default data format
 		audio_out_ll.hw_params.audio_frequency = I2Sx_Fs[0];						// default sampling rate
 		audio_io_error.i2s.bad_params = 1;
 	}

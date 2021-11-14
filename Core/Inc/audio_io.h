@@ -81,13 +81,13 @@
 #define __I2SxTX_DMA_CLK_DISABLE()				__HAL_RCC_DMA1_CLK_DISABLE()
 #define I2SxTX_DMA_Stream_IRQn					DMA1_Stream5_IRQn
 
-#define	AUDIO_OUT_STANDARD_PHILIPS          	(0x00000000U)
-#define AUDIO_OUT_STANDARD_LEFT_JUSTIFIED   	(0x00000010U)
-#define AUDIO_OUT_STANDARD_RIGHT_JUSTIFIED  	(0x00000020U)
-#define AUDIO_OUT_STANDARD_DSP_MODE         	(0x00000030U)
-#define	AUDIO_OUT_DATAFORMAT_16B            	(0x00000000U)
-#define	AUDIO_OUT_DATAFORMAT_24B            	(0x00000003U)
-#define	AUDIO_OUT_DATAFORMAT_32B            	(0x00000005U)
+#define	AUDIO_OUT_LL_STANDARD_I2S          	    (0x00000000U)
+#define AUDIO_OUT_LL_STANDARD_LEFT_JUSTIFIED   	(0x00000010U)
+#define AUDIO_OUT_LL_STANDARD_RIGHT_JUSTIFIED  	(0x00000020U)
+#define AUDIO_OUT_LL_STANDARD_DSP_MODE         	(0x00000030U)
+#define	AUDIO_OUT_LL_DATAFORMAT_16B            	(0x00000000U)
+#define	AUDIO_OUT_LL_DATAFORMAT_24B            	(0x00000003U)
+#define	AUDIO_OUT_LL_DATAFORMAT_32B            	(0x00000005U)
 
 
 typedef enum {
@@ -214,9 +214,9 @@ typedef struct {
 	audio_io_status_t (*deinit)(void);
 	audio_io_status_t (*read)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
 	audio_io_status_t (*write)(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
-	void           (*reset_init)(void);
-	void           (*reset_deinit)(void);
-	void           (*reset)(audio_io_reset_state_t state);
+	void              (*reset_init)(void);
+	void              (*reset_deinit)(void);
+	void              (*reset)(audio_io_reset_state_t state);
 } audio_io_if_t;
 
 typedef struct {
@@ -237,12 +237,14 @@ audio_io_status_t audio_io_deinit(void);
 audio_io_status_t audio_io_read(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
 audio_io_status_t audio_io_write(uint8_t register_address, uint8_t *data, uint8_t size, bool blocking);
 
+
 /**< ****************************************************************************************************************************** */
 /**< Audio Reset GPIO I/O functions																									*/
 /**< ****************************************************************************************************************************** */
-void           audio_io_reset_init(void);
-void           audio_io_reset(audio_io_reset_state_t state);
-void           audio_io_reset_deinit(void);
+void              audio_io_reset_init(void);
+void              audio_io_reset(audio_io_reset_state_t state);
+void              audio_io_reset_deinit(void);
+
 
 /**< ****************************************************************************************************************************** */
 /**< Audio Output Low-Level Stream functions            																						*/
