@@ -10,3 +10,7 @@ bin2c/audio_file.h
 bin2c/bin2c.c
 bin2c/bin2c.exe
 bin2c/readme.txt
+cs43l22/__cs43l22_regs.c
+cs43l22/audio.h
+cs43l22/cs43l22.h
+cs43l22setup.c
