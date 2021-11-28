@@ -36,19 +36,20 @@ void audio_out_ll_write_callback(uint16_t *address, const audio_out_ll_cb_id_t c
         case AUDIO_OUT_LL_TX_HALF_COMPLETE_CB_ID : {
             
 			active_period = audio_buffer;
-			write_callback(AUDIO_BUFFER_HALF_SIZE);
+			write_callback(audio_buffer, AUDIO_BUFFER_HALF_SIZE);
 
         } break;
 
         case AUDIO_OUT_LL_TX_COMPLETE_CB_ID : {
 
 			active_period = &audio_buffer[AUDIO_BUFFER_HALF_SIZE];
-			write_callback(AUDIO_BUFFER_HALF_SIZE);
 
 			const uint16_t size = AUDIO_BUFFER_SIZE / sizeof(uint16_t);
         	if (AUDIO_OUT_LL_OK != audio_out_ll_write((uint16_t *)audio_buffer, size)) {
-        		
+        		while(1);
             }
+
+        	write_callback(&audio_buffer[AUDIO_BUFFER_HALF_SIZE], AUDIO_BUFFER_HALF_SIZE);
 
         } break;
 
@@ -112,6 +113,7 @@ audio_status_t audio_out_write(uint8_t *data, const uint32_t size)
 
 	/* Does not support 24bit and mono yet */
 	for (uint32_t i = 0; i < size; i++) {
+		//audio_buffer[i] = data[i];
 		active_period[i] = data[i];
 	}
 	

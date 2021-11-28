@@ -3,8 +3,8 @@
 
 #include "cs43l22.h"
 
-#define AUDIO_BUFFER_SIZE        (1024U)
-#define AUDIO_BUFFER_HALF_SIZE   (AUDIO_BUFFER_SIZE/2)
+#define AUDIO_BUFFER_SIZE        (4096U)
+#define AUDIO_BUFFER_HALF_SIZE   (AUDIO_BUFFER_SIZE/2U)
 
 typedef struct {
 	codec_status_t (*init)(void);
@@ -107,7 +107,7 @@ typedef struct {
 	audio_out_err_t   out;
 } audio_err_t;
 
-typedef void (*audio_out_write_callback_t)(uint32_t size);
+typedef void (*audio_out_write_callback_t)(uint8_t *address, uint32_t size);
 
 audio_status_t audio_out_init(void);
 audio_status_t audio_out_deinit(void);

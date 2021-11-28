@@ -25,7 +25,9 @@
 #include "audio.h"
 #include "debug_uart.h"
 #include <stdio.h>
-#include "sin_lut.h"
+#include "audio_file.h"
+//#include "sin_lut.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,20 +47,20 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t audio_appdata[1024];
-uint8_t *p_sin_lut;
-uint32_t p_sin_lut_offset;
+uint8_t audio_appdata[AUDIO_BUFFER_SIZE];
+uint8_t *p_audio;
+uint32_t p_audio_offset;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void audio_out_write_callback(uint32_t size);
+void audio_out_write_callback(uint8_t *address, uint32_t size);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+extern const unsigned char audio_file[602112];
 /* USER CODE END 0 */
 
 /**
@@ -127,7 +129,7 @@ int main(void)
   }
 
   audio_out_hw_params_t hw_params = {
-	  .rate     = 44100,
+	  .rate     = 22050,
 	  .channels = 2,
 	  .format   = AUDIO_FORMAT_S16_LE,
   };
@@ -140,14 +142,17 @@ int main(void)
 	  Error_Handler();
   }
 
-  p_sin_lut_offset = 0;
-  p_sin_lut = (uint8_t *)sin_lut_16bit;
+  p_audio = audio_file;
+  //p_audio = (uint8_t *)sin_lut_16bit;
 
-  for (int i = 0; i < 1024; i++) {
-	  audio_appdata[i] = p_sin_lut[i];
+  for (uint32_t i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+	  audio_appdata[i] = p_audio[i];
   }
 
-  if (AUDIO_OK != audio_out_write(audio_appdata, 1024)) {
+  //p_audio_offset = 0;
+  p_audio_offset = AUDIO_BUFFER_SIZE;
+
+  if (AUDIO_OK != audio_out_write(audio_appdata, AUDIO_BUFFER_SIZE)) {
 	  Error_Handler();
   }
 
@@ -198,9 +203,9 @@ void SystemClock_Config(void)
 	/** Initializes the CPU, AHB and APB buses clocks
 	*/
 	RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK   | \
-									   RCC_CLOCKTYPE_SYSCLK | \
-									   RCC_CLOCKTYPE_PCLK1  | \
-									   RCC_CLOCKTYPE_PCLK2;
+									                   RCC_CLOCKTYPE_SYSCLK | \
+									                   RCC_CLOCKTYPE_PCLK1  | \
+									                   RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
@@ -215,12 +220,29 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void audio_out_write_callback(uint32_t size)
+
+
+void audio_out_write_callback(uint8_t *address, uint32_t size)
 {
+/*
 	for (uint32_t i = 0; i < size; i++) {
-		audio_appdata[i] = p_sin_lut[p_sin_lut_offset];
-		p_sin_lut_offset = (p_sin_lut_offset < 1023) ? (p_sin_lut_offset+1) : (0);
+		audio_appdata[i] = p_audio[p_audio_offset++];
 	}
+
+	if (p_audio_offset == AUDIO_BUFFER_SIZE) {
+		p_audio_offset = 0;
+	}
+*/
+
+	for (uint32_t i = 0; i < size; i++) {
+		if (p_audio_offset >= sizeof(audio_file)) {
+			audio_appdata[i] = 0;
+		} else {
+			audio_appdata[i] = p_audio[p_audio_offset++];
+		}
+	}
+
+
 
 	if (AUDIO_OK != audio_out_write(audio_appdata, size)) {
 		Error_Handler();
