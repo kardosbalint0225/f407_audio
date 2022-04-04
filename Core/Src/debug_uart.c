@@ -21,7 +21,7 @@ DMA_HandleTypeDef hdma_uart_tx;
 static debug_uart_err_t debug_uart_error;
 static bool uart_dma_tx_status_busy;
 static fifo_t uart_tx_fifo;
-static uint8_t uart_tx_buffer[128] __attribute__((aligned(128)));
+static uint8_t uart_tx_buffer[512] __attribute__((aligned(512)));
 
 static HAL_StatusTypeDef UARTx_Init(void);
 static HAL_StatusTypeDef UARTx_DeInit(void);

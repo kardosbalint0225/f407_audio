@@ -2,13 +2,13 @@
 
 void fifo_init(fifo_t *fifo)
 {
-    for (uint8_t i = 0; i < FIFO_DEPTH; i++) {
-        for (uint8_t j = 0; j < FIFO_ELEMENT_MAX_SIZE; j++) {
+    for (uint32_t i = 0; i < FIFO_DEPTH; i++) {
+        for (uint32_t j = 0; j < FIFO_ELEMENT_MAX_SIZE; j++) {
             fifo->data[i].element[j] = 0;
         }
     }
 
-    for (uint8_t i = 0; i < FIFO_DEPTH; i++) {
+    for (uint32_t i = 0; i < FIFO_DEPTH; i++) {
         fifo->size[i] = 0;
     }
 

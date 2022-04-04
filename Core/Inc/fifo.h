@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 typedef struct fifo_element {
-	uint8_t element[128] __attribute__((aligned(128)));
+	uint8_t element[512] __attribute__((aligned(512)));
 } fifo_element_t;
 
 typedef struct {
@@ -19,7 +19,7 @@ typedef struct {
 } fifo_t;
 
 typedef enum {
-	FIFO_ELEMENT_MAX_SIZE = 128U,
+	FIFO_ELEMENT_MAX_SIZE = 512U,
 	FIFO_DEPTH            = 16U,
 } fifo_const_t;
 

@@ -3,7 +3,7 @@
 
 #include "cs43l22.h"
 
-#define AUDIO_BUFFER_SIZE        (4096U)
+#define AUDIO_BUFFER_SIZE        (8192U)
 #define AUDIO_BUFFER_HALF_SIZE   (AUDIO_BUFFER_SIZE/2U)
 
 typedef struct {
